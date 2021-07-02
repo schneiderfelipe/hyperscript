@@ -67,7 +67,10 @@ template text*(n: HTMLNode): auto =
   when not defined(js):
     xmltree.innerText(n)
   else:
-    n.innerText
+    if n.nodeType != dom.TextNode:
+      n.innerText
+    else:
+      n.data
 
 
 template tag*(n: HTMLNode): auto =
@@ -221,7 +224,7 @@ macro createElement(args: varargs[untyped]): untyped =
         let fs = selector[1..^1].split('=', 1)
         addAttribute fs[0], fs[1].strip(chars = {'\'', '"'})
       else:
-        debugEcho selector
+        debugEcho "unknown selector: " & selector
 
 
   # Process selector and update tag, id, classes and attributes

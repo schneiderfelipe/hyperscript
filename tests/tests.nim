@@ -5,9 +5,7 @@ import
 
 
 when defined(js):
-  import
-    dom,
-    jsconsole
+  import dom  # TODO: create a render function and remove this
 
 
 template `===`(x, y: auto): bool =
@@ -88,7 +86,7 @@ suite "Special attributes and children":
     check h("a", [nil, "some text", h("div")]).len == 2
     check h("a", [nil, "some text", h("div")]).tag == "a"
     check h("a", [nil, "some text", h("div")]).text == "some text"
-    # check h("a", [nil, "some text", h("div")])[0].text == "some text"
+    check h("a", [nil, "some text", h("div")])[0].text == "some text"
     check h("a", [nil, "some text", h("div")])[1] === h("div")
 
   test "nil children are ignored":
@@ -96,7 +94,7 @@ suite "Special attributes and children":
     check h("a", nil, "some text").len == 1
     check h("a", nil, "some text").tag == "a"
     check h("a", nil, "some text").text == "some text"
-    # check h("a", nil, "some text")[0].text == "some text"
+    check h("a", nil, "some text")[0].text == "some text"
 
 
 suite "Using selector notation":
@@ -222,7 +220,6 @@ suite "Assigning events":
     check example.attr("href") == "#"
     when defined(js):
       # Go there and click on the button!
-      console.log example
       document.body.appendChild example
     check example.text == "click here to win a savory prize"
 
@@ -236,7 +233,6 @@ suite "Assigning events":
     check example.attr("href") == "#"
     when defined(js):
       # Go there and click on the button!
-      console.log example
       document.body.appendChild example
     check example.text == "click here to win a sugary prize"
 
