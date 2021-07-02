@@ -38,6 +38,14 @@ template style*(n: HTMLNode): auto =
     n.style
 
 
+template len*(n: HTMLNode): auto =
+  ## Get the number of children.
+  when not defined(js):
+    xmltree.len(n)
+  else:
+    dom.len(n)
+
+
 template `[]`*(n: HTMLNode, i: Natural): auto =
   ## Get the ith child.
   when not defined(js):
