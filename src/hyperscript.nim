@@ -23,11 +23,14 @@ else:
 
 
 template attr*(n: HTMLNode, key: untyped): auto =
-  ## Get an attribute by name.
+  ## Get an attribute by name. Return `""` on failure.
   when not defined(js):
     xmltree.attr(n, key)
   else:
-    dom.getAttribute(n, key)
+    if dom.hasAttribute(n, key):
+      dom.getAttribute(n, key)
+    else:
+      ""
 
 
 template style*(n: HTMLNode): auto =
@@ -197,8 +200,11 @@ macro createElement(args: varargs[untyped]): untyped =
   func addAttribute(attr: NimNode) {.compileTime.} =
     ## Helper that adds a new attribute.
     attr.expectKind AttributeNodes
-    if attr[1].kind != nnkNilLit:
-      addAttribute(attr[0].strVal, attr[1])
+    if attr[1].kind != nnkNilLit and attr[1] != ident"false":
+      if attr[1] == ident"true":
+        addTupleExpr(attributes, attr[0].strVal, attr[0].strVal)
+      else:
+        addAttribute(attr[0].strVal, attr[1])
 
 
   func addChild(child: NimNode) {.compileTime.} =

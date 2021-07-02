@@ -81,6 +81,22 @@ suite "Special attributes and children":
     check h("a", {href: nil}, "hyperscript").text == "hyperscript"
 
 
+  test "can set boolean attributes":
+    check h("input[value=text]", disabled=true) is HTMLNode
+    check h("input[value=text]", disabled=true).len == 0
+    check h("input[value=text]", disabled=true).tag == "input"
+    check h("input[value=text]", disabled=true).attr("value") == "text"
+    check h("input[value=text]", disabled=true).attr("disabled") == "disabled"
+
+    check h("input[value=text]", disabled=false) is HTMLNode
+    check h("input[value=text]", disabled=false).len == 0
+    check h("input[value=text]", disabled=false).tag == "input"
+    check h("input[value=text]", disabled=false).attr("value") == "text"
+    # TODO: I find it strange that it returns an empty string. What do D3.js
+    # or jQuery return in this case?
+    check h("input[value=text]", disabled=false).attr("disabled") == ""
+
+
   test "can use [] to set children":
     check h("a", [nil, "some text", h("div")]) is HTMLNode
     check h("a", [nil, "some text", h("div")]).len == 2
