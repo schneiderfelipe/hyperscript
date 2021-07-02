@@ -81,6 +81,14 @@ suite "Special children":
     check h("a", nil, "some text")[0].text == "some text"
 
 
+  test "arrays are traversed":
+    check h("a", [nil, "some text", h("div")]) is HTMLNode
+    check h("a", [nil, "some text", h("div")]).tag == "a"
+    check h("a", [nil, "some text", h("div")]).text == "some text"
+    check h("a", [nil, "some text", h("div")])[0].text == "some text"
+    check h("a", [nil, "some text", h("div")])[1] === h("div")
+
+
 suite "Using id and class notations":
   test "can indicate an id":
     check h("div#header") is HTMLNode
