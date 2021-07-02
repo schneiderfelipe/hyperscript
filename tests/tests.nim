@@ -64,6 +64,20 @@ suite "Constructing simple HTML/SVG tags":
     check h("div", "some text", h("a"))[1] === h("a")
 
 
+  test "HTML entities are escaped in text":
+    check h("div", "escaped <, & and >") is HTMLNode
+    check h("div", "escaped <, & and >").tag == "div"
+    check h("div", "escaped <, & and >").text == "escaped <, & and >"
+    check $h("div", "escaped <, & and >") == "<div>escaped &lt;, &amp; and &gt;</div>"
+
+  test "HTML entities are escaped in attributes":
+    check h("div", class="escaped \" and possibly '", "content") is HTMLNode
+    check h("div", class="escaped \" and possibly '", "content").tag == "div"
+    check h("div", class="escaped \" and possibly '", "content").attr("class") == "escaped \" and possibly '"
+    check h("div", class="escaped \" and possibly '", "content").text == "content"
+    check $h("div", class="escaped \" and possibly '", "content") == "<div class=\"escaped &quot; and possibly '\">content</div>"
+
+
 suite "Special attributes and children":
   test "can use {} to set attributes":
     check h("a", {href: "https://github.com/schneiderfelipe/hyperscript"}, "hyperscript") is HTMLNode
