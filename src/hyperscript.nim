@@ -187,6 +187,8 @@ macro createElement(args: varargs[untyped]): untyped =
     of nnkStrLit:
       children.add quote do:
         createTextNode `child`
+    of nnkNilLit:
+      discard
     else:
       children.add child
 

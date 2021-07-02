@@ -73,6 +73,14 @@ suite "Constructing simple HTML/SVG tags":
     check h("a", {href: "https://npm.im/hyperscript"}, "hyperscript").text == "hyperscript"
 
 
+suite "Special children":
+  test "nil is ignored":
+    check h("a", nil, "some text") is HTMLNode
+    check h("a", nil, "some text").tag == "a"
+    check h("a", nil, "some text").text == "some text"
+    check h("a", nil, "some text")[0].text == "some text"
+
+
 suite "Using id and class notations":
   test "can indicate an id":
     check h("div#header") is HTMLNode
@@ -117,7 +125,7 @@ suite "Using id and class notations":
     check h("div.header", class="note").class == "header note"
 
 
-  test "can use a XML namespaces":
+  test "can use XML namespaces":
     check h("ns:div#header") is HTMLNode
     check h("ns:div#header").tag == "ns:div"
     check h("ns:div#header").id == "header"
