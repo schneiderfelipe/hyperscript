@@ -26,3 +26,4 @@ let example =
 ## Some references
 
 - [hyperscript](https://github.com/hyperhype/hyperscript) (JavaScript)
+- [HTML2HyperScript](http://html2hscript.herokuapp.com/): convert HTML snippets to hyperscript
