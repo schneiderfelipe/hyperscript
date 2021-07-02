@@ -30,6 +30,14 @@ template attr*(n: HTMLNode, key: untyped): auto =
     dom.getAttribute(n, key)
 
 
+template style*(n: HTMLNode): auto =
+  ## Get styles.
+  when not defined(js):
+    xmltree.attr(n, "style")
+  else:
+    n.style
+
+
 template `[]`*(n: HTMLNode, i: Natural): auto =
   ## Get the ith child.
   when not defined(js):

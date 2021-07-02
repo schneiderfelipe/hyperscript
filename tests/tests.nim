@@ -186,26 +186,26 @@ suite "Using style notation":
     check h("h1", { style: {"background-color": "blue"} }) is HTMLNode
     check h("h1", { style: {"background-color": "blue"} }).tag == "h1"
     when not defined(js):
-      check h("h1", { style: {"background-color": "blue"} }).attr("style") == "background-color: blue;"
+      check h("h1", { style: {"background-color": "blue"} }).style == "background-color: blue;"
     else:
-      check h("h1", { style: {"background-color": "blue"} }).attr("style").backgroundColor == "blue"
+      check h("h1", { style: {"background-color": "blue"} }).style.backgroundColor == "blue"
 
   test "can mix notations":
     check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;") is HTMLNode
     check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;").tag == "h1"
     when not defined(js):
-      check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;").attr("style") == "background-color: blue; text-align: center;"
+      check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;").style == "background-color: blue; text-align: center;"
     else:
-      check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;").attr("style").backgroundColor == "blue"
-      check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;").attr("style").textAlign == "center"
+      check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;").style.backgroundColor == "blue"
+      check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;").style.textAlign == "center"
 
   test "trailing ; is always added":
     check h("h1", style="text-align: center") is HTMLNode
     check h("h1", style="text-align: center").tag == "h1"
     when not defined(js):
-      check h("h1", style="text-align: center").attr("style") == "text-align: center;"
+      check h("h1", style="text-align: center").style == "text-align: center;"
     else:
-      check h("h1", style="text-align: center").attr("style").textAlign == "center"
+      check h("h1", style="text-align: center").style.textAlign == "center"
 
 
 suite "Assigning events":
