@@ -21,9 +21,9 @@ suite "Constructing simple HTML/SVG tags":
     check h("div").tag == "div"
 
   test "can create tag with single attribute":
-    check h("a", href="github.com") is HTMLNode
-    check h("a", href="github.com").tag == "a"
-    check h("a", href="github.com").href == "github.com"
+    check h("a", href="https://github.com/schneiderfelipe/hyperscript") is HTMLNode
+    check h("a", href="https://github.com/schneiderfelipe/hyperscript").tag == "a"
+    check h("a", href="https://github.com/schneiderfelipe/hyperscript").href == "https://github.com/schneiderfelipe/hyperscript"
 
   test "can create tag with two attributes":
     check h("img", src="kitten.png", alt: "a kitten") is HTMLNode
@@ -42,10 +42,10 @@ suite "Constructing simple HTML/SVG tags":
     check h("div", "some text", " some more").text == "some text some more"
 
   test "can create tag with single attribute and single text child":
-    check h("a", href="github.com", "some text") is HTMLNode
-    check h("a", href="github.com", "some text").tag == "a"
-    check h("a", href="github.com", "some text").href == "github.com"
-    check h("a", href="github.com", "some text").text == "some text"
+    check h("a", href="https://github.com/schneiderfelipe/hyperscript", "some text") is HTMLNode
+    check h("a", href="https://github.com/schneiderfelipe/hyperscript", "some text").tag == "a"
+    check h("a", href="https://github.com/schneiderfelipe/hyperscript", "some text").href == "https://github.com/schneiderfelipe/hyperscript"
+    check h("a", href="https://github.com/schneiderfelipe/hyperscript", "some text").text == "some text"
 
 
   test "can create tag with single tag child":
@@ -67,10 +67,10 @@ suite "Constructing simple HTML/SVG tags":
 
 
   test "can use {} to set attributes":
-    check h("a", {href: "https://npm.im/hyperscript"}, "hyperscript") is HTMLNode
-    check h("a", {href: "https://npm.im/hyperscript"}, "hyperscript").tag == "a"
-    check h("a", {href: "https://npm.im/hyperscript"}, "hyperscript").href == "https://npm.im/hyperscript"
-    check h("a", {href: "https://npm.im/hyperscript"}, "hyperscript").text == "hyperscript"
+    check h("a", {href: "https://github.com/schneiderfelipe/hyperscript"}, "hyperscript") is HTMLNode
+    check h("a", {href: "https://github.com/schneiderfelipe/hyperscript"}, "hyperscript").tag == "a"
+    check h("a", {href: "https://github.com/schneiderfelipe/hyperscript"}, "hyperscript").href == "https://github.com/schneiderfelipe/hyperscript"
+    check h("a", {href: "https://github.com/schneiderfelipe/hyperscript"}, "hyperscript").text == "hyperscript"
 
 
 suite "Special children":
