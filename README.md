@@ -1,6 +1,6 @@
 # hyperscript
 
-A functional [Nim](https://github.com/nim-lang/Nim) library for combining DOM pieces, with [compile-time superpowers](#how_does it_work).
+A functional [Nim](https://github.com/nim-lang/Nim) library for combining DOM pieces, with [compile-time superpowers](https://github.com/schneiderfelipe/hyperscript#how-does-it-work).
 
 ```nim
 import hyperscript
@@ -23,7 +23,7 @@ let example =
         "reusable, interactive HTML widgets. "))
 ```
 
-(Currently, only literal arguments are supported, but this limitation will be removed in a future release, see #8 and #10.)
+(Currently, only literal arguments are supported, but this limitation will be removed in a future release, see [#8](https://github.com/schneiderfelipe/hyperscript/issues/8) and [#10](https://github.com/schneiderfelipe/hyperscript/issues/10).)
 
 ## Installation
 
@@ -61,9 +61,9 @@ let example =
   node
 ```
 
-(We intend to unroll all loops in the future, see #6.)
+(We intend to unroll all loops in the future, see [#6](https://github.com/schneiderfelipe/hyperscript/issues/6).)
 
-When not compiling to JavaScript, `XmlNode` objects are generated using the [`xmltree` standard library](https://nim-lang.org/docs/xmltree.html). When using the C backend, for instance, the example above compiles to
+When not compiling to JavaScript, `XmlNode` objects are generated using the [`xmltree` standard library](https://nim-lang.org/docs/xmltree.html). Using the C backend, for instance, the example above compiles to
 
 ```nim
 let example =
@@ -80,6 +80,6 @@ let example =
 - [hyperscript](https://github.com/hyperhype/hyperscript) (original library, JavaScript)
 - [Hyperscript.jl](https://github.com/JuliaWeb/Hyperscript.jl) (Julia)
 
-Convert HTML snippets to hyperscript:
-- [HTML2HyperScript](http://html2hscript.herokuapp.com/)
+**Convert HTML snippets to hyperscript**:
 - [Mithril HTML to hyperscript converter](https://arthurclemens.github.io/mithril-template-converter/)
+- [HTML2HyperScript](http://html2hscript.herokuapp.com/)
