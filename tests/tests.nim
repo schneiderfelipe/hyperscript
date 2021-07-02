@@ -4,10 +4,6 @@ import
   unittest
 
 
-when defined(js):
-  import dom  # TODO: create a render function and remove this
-
-
 template `===`(x, y: auto): bool =
   ## Compare string representations.
   $x == $y
@@ -248,10 +244,12 @@ suite "Assigning events":
     check example is HTMLNode
     check example.tag == "a"
     check example.attr("href") == "#"
+    check example.text == "click here to win a savory prize"
     when defined(js):
       # Go there and click on the button!
-      document.body.appendChild example
-    check example.text == "click here to win a savory prize"
+      debugEcho document.body.append example
+    else:
+      debugEcho h("main").append example
 
   test "can use sugary functions to assign events":
     let example = h("a", {
@@ -261,10 +259,12 @@ suite "Assigning events":
     check example is HTMLNode
     check example.tag == "a"
     check example.attr("href") == "#"
+    check example.text == "click here to win a sugary prize"
     when defined(js):
       # Go there and click on the button!
-      document.body.appendChild example
-    check example.text == "click here to win a sugary prize"
+      debugEcho document.body.append example
+    else:
+      debugEcho h("main").append example
 
 
 suite "Constructing more complex use cases":

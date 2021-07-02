@@ -17,9 +17,21 @@ when not defined(js):
   type HTMLEvent* = void  # Dummy type
 else:
   import dom
+  export document  # TODO: maybe we could get rid of this?
 
   type HTMLNode* = dom.Element
   type HTMLEvent* = dom.Event
+
+
+template append*(target, content: sink HTMLNode): auto =
+  ## Insert the specified `content` as the last child of `target` and
+  ## **returns `target`**.
+  let t = target  # Evaluate once.
+  when not defined(js):
+    xmltree.add(t, content)
+  else:
+    dom.appendChild(t, content)
+  t
 
 
 template attr*(n: HTMLNode, key: untyped): auto =
@@ -235,7 +247,10 @@ macro createElement(args: varargs[untyped]): untyped =
 
   # Process selector and update tag, id, classes and attributes
   var j = selector.find({'.', '#', '['})
-  if j > -1:
+  if j == -1:
+    # Only a tag
+    tag = selector
+  else:
     tag = selector[0..<j]
 
     var i = j
@@ -256,9 +271,6 @@ macro createElement(args: varargs[untyped]): untyped =
 
     # Last item
     addSelector selector[i..<j]
-  else:
-    # Only a tag
-    tag = selector
 
 
   for arg in args[1..^1]:
