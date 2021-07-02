@@ -137,6 +137,7 @@ macro createElement(args: varargs[untyped]): untyped =
     case styles.kind:
     of nnkTableConstr:
       for pair in styles:
+        # TODO: ignore nil?
         addStyle pair[0].strVal & ": " & pair[1].strVal & "; "
     else:
       addStyle styles.strVal.strip
@@ -177,7 +178,8 @@ macro createElement(args: varargs[untyped]): untyped =
   func addAttribute(attr: NimNode) {.compileTime.} =
     ## Helper that adds a new attribute.
     attr.expectKind AttributeNodes
-    addAttribute(attr[0].strVal, attr[1])
+    if attr[1].kind != nnkNilLit:
+      addAttribute(attr[0].strVal, attr[1])
 
 
   func addChild(child: NimNode) {.compileTime.} =

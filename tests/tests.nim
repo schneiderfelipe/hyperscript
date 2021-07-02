@@ -66,27 +66,34 @@ suite "Constructing simple HTML/SVG tags":
     check h("div", "some text", h("a"))[1] === h("a")
 
 
+suite "Special attributes and children":
   test "can use {} to set attributes":
     check h("a", {href: "https://github.com/schneiderfelipe/hyperscript"}, "hyperscript") is HTMLNode
     check h("a", {href: "https://github.com/schneiderfelipe/hyperscript"}, "hyperscript").tag == "a"
     check h("a", {href: "https://github.com/schneiderfelipe/hyperscript"}, "hyperscript").attr("href") == "https://github.com/schneiderfelipe/hyperscript"
     check h("a", {href: "https://github.com/schneiderfelipe/hyperscript"}, "hyperscript").text == "hyperscript"
 
+  test "nil attributes are ignored":
+    # TODO: we should define some kind of precedence, i.e., *remove attribute*
+    # if the last value received is nil.
+    check h("a", {href: nil}, "hyperscript") is HTMLNode
+    check h("a", {href: nil}, "hyperscript").tag == "a"
+    check h("a", {href: nil}, "hyperscript").attr("href") == ""
+    check h("a", {href: nil}, "hyperscript").text == "hyperscript"
 
-suite "Special children":
-  test "nil is ignored":
-    check h("a", nil, "some text") is HTMLNode
-    check h("a", nil, "some text").tag == "a"
-    check h("a", nil, "some text").text == "some text"
-    check h("a", nil, "some text")[0].text == "some text"
 
-
-  test "arrays are traversed":
+  test "can use [] to set children":
     check h("a", [nil, "some text", h("div")]) is HTMLNode
     check h("a", [nil, "some text", h("div")]).tag == "a"
     check h("a", [nil, "some text", h("div")]).text == "some text"
     check h("a", [nil, "some text", h("div")])[0].text == "some text"
     check h("a", [nil, "some text", h("div")])[1] === h("div")
+
+  test "nil children are ignored":
+    check h("a", nil, "some text") is HTMLNode
+    check h("a", nil, "some text").tag == "a"
+    check h("a", nil, "some text").text == "some text"
+    check h("a", nil, "some text")[0].text == "some text"
 
 
 suite "Using selector notation":
