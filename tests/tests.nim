@@ -87,7 +87,7 @@ suite "Special attributes and children":
     check h("a", {href: nil}, "hyperscript") is HTMLNode
     check h("a", {href: nil}, "hyperscript").len == 1
     check h("a", {href: nil}, "hyperscript").tag == "a"
-    # check h("a", {href: nil}, "hyperscript").attr("href") == ""
+    check h("a", {href: nil}, "hyperscript").attr("href") == ""
     check h("a", {href: nil}, "hyperscript").text == "hyperscript"
 
 
