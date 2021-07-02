@@ -23,15 +23,37 @@ else:
   type HTMLEvent* = dom.Event
 
 
-template append*(target, content: sink HTMLNode): auto =
+macro append*(target: untyped, children: varargs[untyped]): auto =
   ## Insert the specified `content` as the last child of `target` and
   ## **returns `target`**.
-  let t = target  # Evaluate once.
-  when not defined(js):
-    xmltree.add(t, content)
-  else:
-    dom.appendChild(t, content)
-  t
+
+
+  template appendImpl[T,S: not openArray](t: T, child: S): auto =
+    ## Helper that adds a single element.
+    when not defined(js):
+      xmltree.add(t, child)
+    else:
+      dom.appendChild(t, child)
+  template appendImpl[T,S](t: T, children: openArray[S]): auto =
+    ## Helper that adds an open array of elements. We do some loop unrolling
+    ## here.
+    when len(children) == 1:
+      appendImpl(t, children[0])
+    elif len(children) > 0:
+      for child in children:
+        appendImpl(t, child)
+
+
+  result = newStmtList()
+  if len(children) > 0:
+    let t = genSym()
+    result.add quote do:
+      let `t` = `target`  # Evaluate once.
+    for child in children:
+      result.add quote do:
+        appendImpl(`t`, `child`)
+    result.add quote do:
+      `t`
 
 
 template attr*(n: HTMLNode, key: untyped): auto =
@@ -112,9 +134,7 @@ template createElementImpl(tag, attributes, children, events: auto): auto =
       when len(attributes) > 0:
         for attr in attributes:
           dom.setAttribute(node, attr[0], attr[1])
-      when len(children) > 0:
-        for child in children:
-          dom.appendChild(node, child)
+      discard unpackVarargs(append, node, children)  # TODO: remove discard in the future
       when len(events) > 0:
         for event in events:
           dom.addEventListener(node, event[0], event[1])
