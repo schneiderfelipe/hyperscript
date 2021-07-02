@@ -22,12 +22,12 @@ else:
   type HTMLEvent* = dom.Event
 
 
-template `.`*(n: HTMLNode, name: untyped): auto =
+template attr*(n: HTMLNode, key: untyped): auto =
   ## Get an attribute by name.
   when not defined(js):
-    xmltree.attr(n, astToStr(name))
+    xmltree.attr(n, key)
   else:
-    dom.getAttribute(n, astToStr(name))
+    dom.getAttribute(n, key)
 
 
 template `[]`*(n: HTMLNode, i: Natural): auto =
@@ -83,7 +83,6 @@ template createElementImpl(tag, attributes, children, events: auto): auto =
           dom.appendChild(node, child)
       when len(events) > 0:
         for event in events:
-          debugEcho "Event listener added!"
           dom.addEventListener(node, event[0], event[1])
       node
 
@@ -99,7 +98,7 @@ template createTextNode(text: auto): auto =
 macro createElement(args: varargs[untyped]): untyped =
   ## Construct an element with style.
   args[0].expectKind nnkStrLit
-  let description = args[0].strVal
+  let selector = args[0].strVal
 
 
   var
@@ -130,46 +129,55 @@ macro createElement(args: varargs[untyped]): untyped =
     addId x.strVal
 
 
+  func addStyle(styles: auto) {.compileTime.} =
+    ## Helper that adds styles.
+    style.add styles
   func addStyle(styles: NimNode) {.compileTime.} =
     ## Helper that adds styles.
-    case styles.kind
+    case styles.kind:
     of nnkTableConstr:
       for pair in styles:
-        style.add pair[0].strVal & ": " & pair[1].strVal & "; "
+        addStyle pair[0].strVal & ": " & pair[1].strVal & "; "
     else:
-      style.add styles.strVal.strip
+      addStyle styles.strVal.strip
       if style[^1] != ';':
-        style.add ';'
+        addStyle ';'
 
 
+  func isEvent(val: auto): bool {.compileTime.} =
+    ## Check if a value is a valid event callback.
+    false
+  func isEvent(val: NimNode): bool {.compileTime.} =
+    ## Check if a value is a valid event callback.
+    val.kind in EventNodes
+
+  func addEvent(key: sink string, val: auto) {.compileTime.} =
+    ## Helper that adds events.
+    key.removePrefix("on")
+    addTupleExpr(events, key, val)
   func addEvent(pair: NimNode) {.compileTime.} =
     ## Helper that adds events.
-    var name = pair[0].strVal
-    name.removePrefix("on")
-    addTupleExpr(events, name, pair[1])
+    addEvent(pair[0].strVal, pair[1])
 
 
+  func addAttribute(key, val: auto) {.compileTime.} =
+    ## Helper that adds a new attribute.
+    case key:
+    of "class":
+      addClass val
+    of "id":
+      addId val
+    of "style":
+      addStyle val
+    else:
+      if isEvent(val):
+        addEvent(key, val)
+      else:
+        addTupleExpr(attributes, key, val)
   func addAttribute(attr: NimNode) {.compileTime.} =
     ## Helper that adds a new attribute.
-
     attr.expectKind AttributeNodes
-
-    let name = attr[0].strVal
-    case name
-    of "class":
-      addClass attr[1]
-    of "id":
-      addId attr[1]
-    of "style":
-      addStyle attr[1]
-    else:
-      case attr[1].kind
-      of EventNodes:
-        # Events
-        addEvent attr
-      else:
-        # debugEcho treeRepr attr[1]
-        addTupleExpr(attributes, name, attr[1])
+    addAttribute(attr[0].strVal, attr[1])
 
 
   func addChild(child: NimNode) {.compileTime.} =
@@ -184,27 +192,46 @@ macro createElement(args: varargs[untyped]): untyped =
       children.add child
 
 
-  # Update tag, id and classes
-  var j = description.find({'.', '#'})
-  if j > -1:
-    tag = description[0..<j]
-    var
-      slice: string
-      i = j
-    while j > -1:
-      j = description.find({'.', '#'}, start = i + 1)
-      if j > -1:
-        slice = description[i..<j]
+  func addSelector(selector: string) {.compileTime.} =
+    if len(selector) > 0:
+      case selector[0]:
+      of '.':
+        addClass selector[1..^1]
+      of '#':
+        addId selector[1..^1]
+      of '[':
+        let fs = selector[1..^1].split('=', 1)
+        addAttribute fs[0], fs[1].strip(chars = {'\'', '"'})
       else:
-        slice = description[i..^1]
+        debugEcho selector
 
-      if slice[0] == '.':
-        addClass slice[1..^1]
+
+  # Process selector and update tag, id, classes and attributes
+  var j = selector.find({'.', '#', '['})
+  if j > -1:
+    tag = selector[0..<j]
+
+    var i = j
+    j += 1
+    while j < len(selector):
+      case selector[i]:
+      of '.', '#':
+        if selector[j] in {'.', '#', '['}:
+          addSelector selector[i..<j]
+          i = j
+      of '[':
+        if selector[j] == ']':
+          addSelector selector[i..<j]
+          i = j + 1
       else:
-        addId slice[1..^1]
-      i = j
+        discard
+      j += 1
+
+    # Last item
+    addSelector selector[i..<j]
   else:
-    tag = description
+    # Only a tag
+    tag = selector
 
 
   for arg in args[1..^1]:

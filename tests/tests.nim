@@ -23,13 +23,13 @@ suite "Constructing simple HTML/SVG tags":
   test "can create tag with single attribute":
     check h("a", href="https://github.com/schneiderfelipe/hyperscript") is HTMLNode
     check h("a", href="https://github.com/schneiderfelipe/hyperscript").tag == "a"
-    check h("a", href="https://github.com/schneiderfelipe/hyperscript").href == "https://github.com/schneiderfelipe/hyperscript"
+    check h("a", href="https://github.com/schneiderfelipe/hyperscript").attr("href") == "https://github.com/schneiderfelipe/hyperscript"
 
   test "can create tag with two attributes":
     check h("img", src="kitten.png", alt: "a kitten") is HTMLNode
     check h("img", src="kitten.png", alt: "a kitten").tag == "img"
-    check h("img", src="kitten.png", alt: "a kitten").src == "kitten.png"
-    check h("img", src="kitten.png", alt: "a kitten").alt == "a kitten"
+    check h("img", src="kitten.png", alt: "a kitten").attr("src") == "kitten.png"
+    check h("img", src="kitten.png", alt: "a kitten").attr("alt") == "a kitten"
 
   test "can create tag with single text child":
     check h("div", "some text") is HTMLNode
@@ -44,7 +44,7 @@ suite "Constructing simple HTML/SVG tags":
   test "can create tag with single attribute and single text child":
     check h("a", href="https://github.com/schneiderfelipe/hyperscript", "some text") is HTMLNode
     check h("a", href="https://github.com/schneiderfelipe/hyperscript", "some text").tag == "a"
-    check h("a", href="https://github.com/schneiderfelipe/hyperscript", "some text").href == "https://github.com/schneiderfelipe/hyperscript"
+    check h("a", href="https://github.com/schneiderfelipe/hyperscript", "some text").attr("href") == "https://github.com/schneiderfelipe/hyperscript"
     check h("a", href="https://github.com/schneiderfelipe/hyperscript", "some text").text == "some text"
 
 
@@ -69,7 +69,7 @@ suite "Constructing simple HTML/SVG tags":
   test "can use {} to set attributes":
     check h("a", {href: "https://github.com/schneiderfelipe/hyperscript"}, "hyperscript") is HTMLNode
     check h("a", {href: "https://github.com/schneiderfelipe/hyperscript"}, "hyperscript").tag == "a"
-    check h("a", {href: "https://github.com/schneiderfelipe/hyperscript"}, "hyperscript").href == "https://github.com/schneiderfelipe/hyperscript"
+    check h("a", {href: "https://github.com/schneiderfelipe/hyperscript"}, "hyperscript").attr("href") == "https://github.com/schneiderfelipe/hyperscript"
     check h("a", {href: "https://github.com/schneiderfelipe/hyperscript"}, "hyperscript").text == "hyperscript"
 
 
@@ -89,64 +89,89 @@ suite "Special children":
     check h("a", [nil, "some text", h("div")])[1] === h("div")
 
 
-suite "Using id and class notations":
+suite "Using selector notation":
   test "can indicate an id":
     check h("div#header") is HTMLNode
     check h("div#header").tag == "div"
-    check h("div#header").id == "header"
+    check h("div#header").attr("id") == "header"
 
   test "two ids get concatenated":
     check h("div#header#main") is HTMLNode
     check h("div#header#main").tag == "div"
-    check h("div#header#main").id == "headermain"
+    check h("div#header#main").attr("id") == "headermain"
 
   test "can indicate a class":
     check h("div.header") is HTMLNode
     check h("div.header").tag == "div"
-    check h("div.header").class == "header"
+    check h("div.header").attr("class") == "header"
 
   test "two classes get joined":
     check h("div.header.note") is HTMLNode
     check h("div.header.note").tag == "div"
-    check h("div.header.note").class == "header note"
+    check h("div.header.note").attr("class") == "header note"
 
 
-  test "can mix ids and classes in any order":
+  test "can indicate an attribute":
+    check h("input[type=text]") is HTMLNode
+    check h("input[type=text]").tag == "input"
+    check h("input[type=text]").attr("type") == "text"
+
+  test "can indicate two attributes":
+    check h("input[type=text][placeholder=Name]") is HTMLNode
+    check h("input[type=text][placeholder=Name]").tag == "input"
+    check h("input[type=text][placeholder=Name]").attr("type") == "text"
+    check h("input[type=text][placeholder=Name]").attr("placeholder") == "Name"
+
+
+  test "can mix ids, classes and attributes":
     check h("div#header.note") is HTMLNode
     check h("div#header.note").tag == "div"
-    check h("div#header.note").id == "header"
-    check h("div#header.note").class == "note"
+    check h("div#header.note").attr("id") == "header"
+    check h("div#header.note").attr("class") == "note"
 
     check h("div.note#header") is HTMLNode
     check h("div.note#header").tag == "div"
-    check h("div.note#header").id == "header"
-    check h("div.note#header").class == "note"
+    check h("div.note#header").attr("id") == "header"
+    check h("div.note#header").attr("class") == "note"
+
+    check h("a#exit.external[href='https://example.com']", "Leave") is HTMLNode
+    check h("a#exit.external[href='https://example.com']", "Leave").tag == "a"
+    check h("a#exit.external[href='https://example.com']", "Leave").attr("id") == "exit"
+    check h("a#exit.external[href='https://example.com']", "Leave").attr("class") == "external"
+    check h("a#exit.external[href='https://example.com']", "Leave").attr("href") == "https://example.com"
+    check h("a#exit.external[href='https://example.com']", "Leave").text == "Leave"
 
 
   test "can mix notations":
     check h("div#header", id="main") is HTMLNode
     check h("div#header", id="main").tag == "div"
-    check h("div#header", id="main").id == "headermain"
+    check h("div#header", id="main").attr("id") == "headermain"
 
     check h("div.header", class="note") is HTMLNode
     check h("div.header", class="note").tag == "div"
-    check h("div.header", class="note").class == "header note"
+    check h("div.header", class="note").attr("class") == "header note"
+
+    check h("a.link[href=/]", {class: "selected"}, "Home") is HTMLNode
+    check h("a.link[href=/]", {class: "selected"}, "Home").tag == "a"
+    check h("a.link[href=/]", {class: "selected"}, "Home").attr("class") == "link selected"
+    check h("a.link[href=/]", {class: "selected"}, "Home").attr("href") == "/"
+    check h("a.link[href=/]", {class: "selected"}, "Home").text == "Home"
 
 
   test "can use XML namespaces":
     check h("ns:div#header") is HTMLNode
     check h("ns:div#header").tag == "ns:div"
-    check h("ns:div#header").id == "header"
+    check h("ns:div#header").attr("id") == "header"
 
 
   test "missing tag is div":
     check h("#header") is HTMLNode
     check h("#header").tag == "div"
-    check h("#header").id == "header"
+    check h("#header").attr("id") == "header"
 
     check h(".note") is HTMLNode
     check h(".note").tag == "div"
-    check h(".note").class == "note"
+    check h(".note").attr("class") == "note"
 
 
 suite "Using style notation":
@@ -154,26 +179,26 @@ suite "Using style notation":
     check h("h1", { style: {"background-color": "blue"} }) is HTMLNode
     check h("h1", { style: {"background-color": "blue"} }).tag == "h1"
     when not defined(js):
-      check h("h1", { style: {"background-color": "blue"} }).style == "background-color: blue;"
+      check h("h1", { style: {"background-color": "blue"} }).attr("style") == "background-color: blue;"
     else:
-      check h("h1", { style: {"background-color": "blue"} }).style.backgroundColor == "blue"
+      check h("h1", { style: {"background-color": "blue"} }).attr("style").backgroundColor == "blue"
 
   test "can mix notations":
     check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;") is HTMLNode
     check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;").tag == "h1"
     when not defined(js):
-      check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;").style == "background-color: blue; text-align: center;"
+      check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;").attr("style") == "background-color: blue; text-align: center;"
     else:
-      check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;").style.backgroundColor == "blue"
-      check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;").style.textAlign == "center"
+      check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;").attr("style").backgroundColor == "blue"
+      check h("h1", { style: {"background-color": "blue"} }, style="text-align: center;").attr("style").textAlign == "center"
 
   test "trailing ; is always added":
     check h("h1", style="text-align: center") is HTMLNode
     check h("h1", style="text-align: center").tag == "h1"
     when not defined(js):
-      check h("h1", style="text-align: center").style == "text-align: center;"
+      check h("h1", style="text-align: center").attr("style") == "text-align: center;"
     else:
-      check h("h1", style="text-align: center").style.textAlign == "center"
+      check h("h1", style="text-align: center").attr("style").textAlign == "center"
 
 
 suite "Assigning events":
@@ -184,7 +209,7 @@ suite "Assigning events":
     }, "click here to win a savory prize")
     check example is HTMLNode
     check example.tag == "a"
-    check example.href == "#"
+    check example.attr("href") == "#"
     when defined(js):
       # Go there and click on the button!
       console.log example
@@ -198,7 +223,7 @@ suite "Assigning events":
     }, "click here to win a sugary prize")
     check example is HTMLNode
     check example.tag == "a"
-    check example.href == "#"
+    check example.attr("href") == "#"
     when defined(js):
       # Go there and click on the button!
       console.log example
