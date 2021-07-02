@@ -188,9 +188,7 @@ suite "Assigning events":
     when defined(js):
       # Go there and click on the button!
       console.log example
-      document.body.appendChild example  # TODO: have a render function that
-                                         # mounts in JS and prints in the
-                                         # server. A mount point can be used as the starting reference Element.
+      document.body.appendChild example
     check example.text == "click here to win a savory prize"
 
   test "can use sugary functions to assign events":
@@ -229,5 +227,3 @@ suite "Constructing more complex use cases":
             "reusable, interactive HTML widgets. "))
     check example is HTMLNode
     check example.tag == "div"
-
-# TODO: test escaping

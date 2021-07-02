@@ -4,9 +4,6 @@ import
   sugar
 
 
-# TODO: can we support spread attributes (and do we need to)?
-# TODO: can we support components through tag names? (maybe a function instead of a string? not sure how that would work)
-# TODO: what about boolean attributes, do they work?
 
 
 const AttributeNodes = {nnkExprEqExpr, nnkExprColonExpr}
@@ -75,11 +72,9 @@ template createElementImpl(tag, attributes, children, events: auto): auto =
     xmltree.newXmlTree(tag, children, attributes.toXmlAttributes)
   else:
     when len(attributes) == 0 and len(children) == 0 and len(events) == 0:
-      # TODO: maybe it is faster if we use cloneNode if a similar node has been already created?
       dom.createElement(document, tag)
     else:
       let node = dom.createElement(document, tag)
-      # TODO: I would like to unroll those loops in the future.
       when len(attributes) > 0:
         for attr in attributes:
           dom.setAttribute(node, attr[0], attr[1])
@@ -88,7 +83,6 @@ template createElementImpl(tag, attributes, children, events: auto): auto =
           dom.appendChild(node, child)
       when len(events) > 0:
         for event in events:
-          # TODO: can use options in the future
           debugEcho "Event listener added!"
           dom.addEventListener(node, event[0], event[1])
       node
@@ -108,8 +102,6 @@ macro createElement(args: varargs[untyped]): untyped =
   let description = args[0].strVal
 
 
-  # TODO: tags, ids, styles and classes work with literals, but what about
-  # variables? This should be addressed together with mutability templates.
   var
     tag, id, style: string
     classes: seq[string]
@@ -159,7 +151,6 @@ macro createElement(args: varargs[untyped]): untyped =
 
   func addAttribute(attr: NimNode) {.compileTime.} =
     ## Helper that adds a new attribute.
-    # TODO: what about boolean attributes?
 
     attr.expectKind AttributeNodes
 
