@@ -6,7 +6,6 @@ description   = "Create HyperText with Nim."
 license       = "MIT"
 srcDir        = "src"
 
-
 # Dependencies
 
-requires "nim >= 1.4.8"
+requires "nim >= 1.2.6"
