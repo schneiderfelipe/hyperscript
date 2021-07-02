@@ -1,6 +1,6 @@
 # hyperscript
 
-A [hyperscript](https://github.com/hyperhype/hyperscript) Nim implementation with compile-time superpowers.
+A functional [Nim](https://github.com/nim-lang/Nim) library for combining DOM pieces, with [compile-time superpowers](#how_does it_work).
 
 ```nim
 import hyperscript
@@ -23,8 +23,63 @@ let example =
         "reusable, interactive HTML widgets. "))
 ```
 
+(Currently, only literal arguments are supported, but this limitation will be removed in a future release, see #8 and #10.)
+
+## Installation
+
+hyperscript works with Nim 1.2.6+ and can be installed using [Nimble](https://github.com/nim-lang/nimble):
+
+```bash
+$ nimble install hyperscript
+```
+
+## How does it work?
+
+The **basic design** consists of compiling down to efficient calls to the DOM (through the [`dom` standard library](https://nim-lang.org/docs/dom.html)). As such, the following,
+
+```nim
+let example = h("p#example",
+  h("input.name[value=Name]",
+    style: {"background": "yellow"},
+  ),
+)
+```
+
+compiles roughly to
+
+```nim
+let example =
+  let node = document.createElement("p")
+  for attr in items([("id", "example")]):
+    node.setAttribute(attr[0], attr[1])
+  for child in items([
+    let node = document.createElement("input")
+    for attr in items([("value", "Name"), ("class", "name"), ("style", "background: yellow;")]):
+      node.setAttribute(attr[0], attr[1])
+    node]):
+    node.appendChild(child)
+  node
+```
+
+(We intend to unroll all loops in the future, see #6.)
+
+When not compiling to JavaScript, `XmlNode` objects are generated using the [`xmltree` standard library](https://nim-lang.org/docs/xmltree.html). When using the C backend, for instance, the example above compiles to
+
+```nim
+let example =
+  newXmlTree("p", [
+      newXmlTree("input", @[],
+        {"value": "Name", "class": "name", "style": "background: yellow;"}.toXmlAttributes,
+      ),
+    ], {"id": "example"}.toXmlAttributes,
+  )
+```
+
 ## Some references
 
-- [hyperscript](https://github.com/hyperhype/hyperscript) (JavaScript)
+- [hyperscript](https://github.com/hyperhype/hyperscript) (original library, JavaScript)
 - [Hyperscript.jl](https://github.com/JuliaWeb/Hyperscript.jl) (Julia)
-- [HTML2HyperScript](http://html2hscript.herokuapp.com/): convert HTML snippets to hyperscript
+
+Convert HTML snippets to hyperscript:
+- [HTML2HyperScript](http://html2hscript.herokuapp.com/)
+- [Mithril HTML to hyperscript converter](https://arthurclemens.github.io/mithril-template-converter/)
