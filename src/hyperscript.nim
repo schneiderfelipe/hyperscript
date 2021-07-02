@@ -277,10 +277,10 @@ when isMainModule:
           h("h2", "content title",  { style: {"background-color": "#f22"} }),
           h("p",
             "so it's just like a templating engine,\n",
-            "but easy to use inline with javascript\n"),
+            "but easy to use inline with Nim\n"),
           h("p",
             "the intention is for this to be used to create\n",
-            "reusable, interactive html widgets. "))
+            "reusable, interactive HTML widgets. "))
 
   debugEcho sizeof example[]
   debugEcho sizeof h("a")[]
