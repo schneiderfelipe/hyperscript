@@ -11,13 +11,13 @@ const EventNodes = RoutineNodes + {nnkInfix}
 
 when not defined(js):
   import xmltree
-  export toXmlAttributes  # TODO: maybe we could get rid of this?
+  export toXmlAttributes # TODO: maybe we could get rid of this?
 
   type HTMLNode* = xmltree.XmlNode
-  type HTMLEvent* = void  # Dummy type
+  type HTMLEvent* = void # Dummy type
 else:
   import dom
-  export document  # TODO: maybe we could get rid of this?
+  export document # TODO: maybe we could get rid of this?
 
   type HTMLNode* = dom.Element
   type HTMLEvent* = dom.Event
@@ -28,13 +28,13 @@ macro append*(target: untyped, children: varargs[untyped]): auto =
   ## **returns `target`**.
 
 
-  template appendImpl[T,S: not openArray](t: T, child: S): auto =
+  template appendImpl[T, S: not openArray](t: T, child: S): auto =
     ## Helper that adds a single element.
     when not defined(js):
       xmltree.add(t, child)
     else:
       dom.appendChild(t, child)
-  template appendImpl[T,S](t: T, children: openArray[S]): auto =
+  template appendImpl[T, S](t: T, children: openArray[S]): auto =
     ## Helper that adds an open array of elements. We unroll loops of up to
     ## eight elements here.
     when len(children) == 1:
@@ -90,7 +90,7 @@ macro append*(target: untyped, children: varargs[untyped]): auto =
   if len(children) > 0:
     let t = genSym()
     result.add quote do:
-      let `t` = `target`  # Evaluate once.
+      let `t` = `target` # Evaluate once.
     for child in children:
       result.add quote do:
         appendImpl(`t`, `child`)
@@ -103,14 +103,14 @@ macro attr*(target: untyped, attributes: varargs[untyped]): auto =
   ## `target`**.
 
 
-  template attrImpl[T,S: not openArray](t: T, attribute: S): auto =
+  template attrImpl[T, S: not openArray](t: T, attribute: S): auto =
     ## Helper that sets a single attribute.
     when not defined(js):
       # TODO: not the prettiest thing in the world
       xmltree.attrs(t, xmltree.attrs(t) & attribute)
     else:
       dom.setAttribute(t, attribute[0], attribute[1])
-  template attrImpl[T,S](t: T, attributes: openArray[S]): auto =
+  template attrImpl[T, S](t: T, attributes: openArray[S]): auto =
     ## Helper that adds an open array of attributes. We unroll loops of up to
     ## eight elements here.
     when len(attributes) == 1:
@@ -166,7 +166,7 @@ macro attr*(target: untyped, attributes: varargs[untyped]): auto =
   if len(attributes) > 0:
     let t = genSym()
     result.add quote do:
-      let `t` = `target`  # Evaluate once.
+      let `t` = `target` # Evaluate once.
     for attribute in attributes:
       result.add quote do:
         attrImpl(`t`, `attribute`)
@@ -189,13 +189,13 @@ macro on*(target: untyped, events: varargs[untyped]): auto =
   ## `target`**.
 
 
-  template onImpl[T,S: not openArray](t: T, event: S): auto =
+  template onImpl[T, S: not openArray](t: T, event: S): auto =
     ## Helper that sets a single event.
     when not defined(js):
       debugEcho "Event listeners are not supported outside JavaScript: ", event
     else:
       dom.addEventListener(t, event[0], event[1])
-  template onImpl[T,S](t: T, events: openArray[S]): auto =
+  template onImpl[T, S](t: T, events: openArray[S]): auto =
     ## Helper that adds an open array of events. We unroll loops of up to
     ## eight elements here.
     when len(events) == 1:
@@ -251,7 +251,7 @@ macro on*(target: untyped, events: varargs[untyped]): auto =
   if len(events) > 0:
     let t = genSym()
     result.add quote do:
-      let `t` = `target`  # Evaluate once.
+      let `t` = `target` # Evaluate once.
     for event in events:
       result.add quote do:
         onImpl(`t`, `event`)
@@ -528,13 +528,13 @@ when isMainModule:
     let example =
       h("div#page",
         h("div#header",
-          h("h1.classy", "h", { style: {"background-color": "#22f"} })),
-        h("div#menu", { style: {"background-color": "#2f2"} },
+          h("h1.classy", "h", {style: {"background-color": "#22f"}})),
+        h("div#menu", {style: {"background-color": "#2f2"}},
           h("ul",
             h("li", "one"),
             h("li", "two"),
             h("li", "three"))),
-          h("h2", "content title",  { style: {"background-color": "#f22"} }),
+          h("h2", "content title", {style: {"background-color": "#f22"}}),
           h("p",
             "so it's just like a templating engine,\n",
             "but easy to use inline with Nim\n"),
