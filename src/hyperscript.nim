@@ -98,13 +98,89 @@ macro append*(target: untyped, children: varargs[untyped]): auto =
       `t`
 
 
-template attr*(n: HTMLNode, key: untyped): auto =
-  ## Get an attribute by name. Return `""` on failure.
+macro attr*(target: untyped, attributes: varargs[untyped]): auto =
+  ## Insert the specified `attributes` as attributes of `target` and **returns
+  ## `target`**.
+
+
+  template attrImpl[T,S: not openArray](t: T, attribute: S): auto =
+    ## Helper that sets a single attribute.
+    when not defined(js):
+      # TODO: not the prettiest thing in the world
+      xmltree.attrs(t, xmltree.attrs(t) & attribute)
+    else:
+      dom.setAttribute(t, attribute[0], attribute[1])
+  template attrImpl[T,S](t: T, attributes: openArray[S]): auto =
+    ## Helper that adds an open array of attributes. We unroll loops of up to
+    ## eight elements here.
+    when len(attributes) == 1:
+      attrImpl(t, attributes[0])
+    elif len(attributes) == 2:
+      attrImpl(t, attributes[0])
+      attrImpl(t, attributes[1])
+    elif len(attributes) == 3:
+      attrImpl(t, attributes[0])
+      attrImpl(t, attributes[1])
+      attrImpl(t, attributes[2])
+    elif len(attributes) == 4:
+      attrImpl(t, attributes[0])
+      attrImpl(t, attributes[1])
+      attrImpl(t, attributes[2])
+      attrImpl(t, attributes[3])
+    elif len(attributes) == 5:
+      attrImpl(t, attributes[0])
+      attrImpl(t, attributes[1])
+      attrImpl(t, attributes[2])
+      attrImpl(t, attributes[3])
+      attrImpl(t, attributes[4])
+    elif len(attributes) == 6:
+      attrImpl(t, attributes[0])
+      attrImpl(t, attributes[1])
+      attrImpl(t, attributes[2])
+      attrImpl(t, attributes[3])
+      attrImpl(t, attributes[4])
+      attrImpl(t, attributes[5])
+    elif len(attributes) == 7:
+      attrImpl(t, attributes[0])
+      attrImpl(t, attributes[1])
+      attrImpl(t, attributes[2])
+      attrImpl(t, attributes[3])
+      attrImpl(t, attributes[4])
+      attrImpl(t, attributes[5])
+      attrImpl(t, attributes[6])
+    elif len(attributes) == 8:
+      attrImpl(t, attributes[0])
+      attrImpl(t, attributes[1])
+      attrImpl(t, attributes[2])
+      attrImpl(t, attributes[3])
+      attrImpl(t, attributes[4])
+      attrImpl(t, attributes[5])
+      attrImpl(t, attributes[6])
+      attrImpl(t, attributes[7])
+    elif len(attributes) > 0:
+      for attribute in attributes:
+        attrImpl(t, attribute)
+
+
+  result = newStmtList()
+  if len(attributes) > 0:
+    let t = genSym()
+    result.add quote do:
+      let `t` = `target`  # Evaluate once.
+    for attribute in attributes:
+      result.add quote do:
+        attrImpl(`t`, `attribute`)
+    result.add quote do:
+      `t`
+
+
+template attr*[T](t: T, attribute: string): auto =
+  ## Helper that gets a single attribute by name and returns `""` on failure.
   when not defined(js):
-    xmltree.attr(n, key)
+    xmltree.attr(t, attribute)
   else:
-    if dom.hasAttribute(n, key):
-      dom.getAttribute(n, key)
+    if dom.hasAttribute(t, attribute):
+      dom.getAttribute(t, attribute)
     else:
       ""
 
@@ -172,11 +248,9 @@ template createElementImpl(tag, attributes, children, events: auto): auto =
     when len(attributes) == 0 and len(children) == 0 and len(events) == 0:
       dom.createElement(document, tag)
     else:
-      let node = dom.createElement(document, tag)
-      when len(attributes) > 0:
-        for attr in attributes:
-          dom.setAttribute(node, attr[0], attr[1])
-      discard unpackVarargs(append, node, children)  # TODO: remove discard in the future
+      let node = dom.createElement(document, tag).attr(attributes).append(children)
+      # TODO: do the same for events that we did for attributes and children
+      # and remove the `node` variable.
       when len(events) > 0:
         for event in events:
           dom.addEventListener(node, event[0], event[1])
