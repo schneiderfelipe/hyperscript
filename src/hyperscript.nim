@@ -36,7 +36,7 @@ macro append*(target: untyped, children: varargs[untyped]): auto =
       dom.appendChild(t, child)
   template appendImpl[T,S](t: T, children: openArray[S]): auto =
     ## Helper that adds an open array of elements. We unroll loops of up to
-    ## five elements here.
+    ## eight elements here.
     when len(children) == 1:
       appendImpl(t, children[0])
     elif len(children) == 2:
@@ -57,6 +57,30 @@ macro append*(target: untyped, children: varargs[untyped]): auto =
       appendImpl(t, children[2])
       appendImpl(t, children[3])
       appendImpl(t, children[4])
+    elif len(children) == 6:
+      appendImpl(t, children[0])
+      appendImpl(t, children[1])
+      appendImpl(t, children[2])
+      appendImpl(t, children[3])
+      appendImpl(t, children[4])
+      appendImpl(t, children[5])
+    elif len(children) == 7:
+      appendImpl(t, children[0])
+      appendImpl(t, children[1])
+      appendImpl(t, children[2])
+      appendImpl(t, children[3])
+      appendImpl(t, children[4])
+      appendImpl(t, children[5])
+      appendImpl(t, children[6])
+    elif len(children) == 8:
+      appendImpl(t, children[0])
+      appendImpl(t, children[1])
+      appendImpl(t, children[2])
+      appendImpl(t, children[3])
+      appendImpl(t, children[4])
+      appendImpl(t, children[5])
+      appendImpl(t, children[6])
+      appendImpl(t, children[7])
     elif len(children) > 0:
       for child in children:
         appendImpl(t, child)
