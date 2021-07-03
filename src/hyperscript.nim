@@ -184,6 +184,80 @@ template attr*[T](t: T, attribute: string): auto =
     else:
       ""
 
+macro on*(target: untyped, events: varargs[untyped]): auto =
+  ## Insert the specified `events` as events on `target` and **returns
+  ## `target`**.
+
+
+  template onImpl[T,S: not openArray](t: T, event: S): auto =
+    ## Helper that sets a single event.
+    when not defined(js):
+      debugEcho "Event listeners are not supported outside JavaScript: ", event
+    else:
+      dom.addEventListener(t, event[0], event[1])
+  template onImpl[T,S](t: T, events: openArray[S]): auto =
+    ## Helper that adds an open array of events. We unroll loops of up to
+    ## eight elements here.
+    when len(events) == 1:
+      onImpl(t, events[0])
+    elif len(events) == 2:
+      onImpl(t, events[0])
+      onImpl(t, events[1])
+    elif len(events) == 3:
+      onImpl(t, events[0])
+      onImpl(t, events[1])
+      onImpl(t, events[2])
+    elif len(events) == 4:
+      onImpl(t, events[0])
+      onImpl(t, events[1])
+      onImpl(t, events[2])
+      onImpl(t, events[3])
+    elif len(events) == 5:
+      onImpl(t, events[0])
+      onImpl(t, events[1])
+      onImpl(t, events[2])
+      onImpl(t, events[3])
+      onImpl(t, events[4])
+    elif len(events) == 6:
+      onImpl(t, events[0])
+      onImpl(t, events[1])
+      onImpl(t, events[2])
+      onImpl(t, events[3])
+      onImpl(t, events[4])
+      onImpl(t, events[5])
+    elif len(events) == 7:
+      onImpl(t, events[0])
+      onImpl(t, events[1])
+      onImpl(t, events[2])
+      onImpl(t, events[3])
+      onImpl(t, events[4])
+      onImpl(t, events[5])
+      onImpl(t, events[6])
+    elif len(events) == 8:
+      onImpl(t, events[0])
+      onImpl(t, events[1])
+      onImpl(t, events[2])
+      onImpl(t, events[3])
+      onImpl(t, events[4])
+      onImpl(t, events[5])
+      onImpl(t, events[6])
+      onImpl(t, events[7])
+    elif len(events) > 0:
+      for event in events:
+        onImpl(t, event)
+
+
+  result = newStmtList()
+  if len(events) > 0:
+    let t = genSym()
+    result.add quote do:
+      let `t` = `target`  # Evaluate once.
+    for event in events:
+      result.add quote do:
+        onImpl(`t`, `event`)
+    result.add quote do:
+      `t`
+
 
 template style*(n: HTMLNode): auto =
   ## Get styles.
@@ -242,19 +316,10 @@ template createElementImpl(tag, attributes, children, events: auto): auto =
   ## Construct an element.
   when not defined(js):
     when len(events) > 0:
-      debugEcho "Some event listeners had to be discarded: ", events
+      debugEcho "Event listeners are not supported outside JavaScript: ", events
     xmltree.newXmlTree(tag, children, attributes.toXmlAttributes)
   else:
-    when len(attributes) == 0 and len(children) == 0 and len(events) == 0:
-      dom.createElement(document, tag)
-    else:
-      let node = dom.createElement(document, tag).attr(attributes).append(children)
-      # TODO: do the same for events that we did for attributes and children
-      # and remove the `node` variable.
-      when len(events) > 0:
-        for event in events:
-          dom.addEventListener(node, event[0], event[1])
-      node
+    dom.createElement(document, tag).attr(attributes).append(children).on(events)
 
 
 template createTextNode(text: auto): auto =
