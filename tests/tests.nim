@@ -327,3 +327,16 @@ suite "Modifying simple HTML/SVG tags":
     check h("div").tag == "div"
     check h("div").len == 0
     check h("div").append(h("p")).len == 1
+
+  test "can add an event listener":
+    check h("a", href: "#", "click me!") is HTMLNode
+    check h("a", href: "#", "click me!").tag == "a"
+    check h("a", href: "#", "click me!").attr("href") == "#"
+    check h("a", href: "#", "click me!").text == "click me!"
+    when defined(js):
+      # Go there and click on the button!
+      debugEcho document.body.append h("a", href: "#", "click me!").on("click",
+        (e: HTMLEvent) => debugEcho("you clicked!"))
+    else:
+      debugEcho h("main").append h("a", href: "#", "click me!").on("click",
+        (e: HTMLEvent) => debugEcho("you clicked!"))

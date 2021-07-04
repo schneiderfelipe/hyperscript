@@ -1,11 +1,12 @@
 import
   macros,
+  strformat,
   strutils,
   sugar
 
-
 const AttributeNodes = {nnkExprEqExpr, nnkExprColonExpr}
 const EventNodes = RoutineNodes + {nnkInfix}
+
 
 when not defined(js):
   import xmltree, strtabs
@@ -192,6 +193,21 @@ template attr*[T](t: T, attribute: string): auto =
     else:
       ""
 
+
+template onSetImpl*(t, key, f: auto): auto =
+  ## Helper that sets a single event in-place (nothing is returned).
+  when not defined(js):
+    debugEcho "Event listeners are not supported outside JavaScript: got \"" & key & "\""
+  else:
+    dom.addEventListener(t, key, f)
+template on*[T](target: T, key: string, f: auto): auto =
+  ## Insert the specified `event` as an event of `target` and **return
+  ## `target`**.
+  let t = target # Evaluate once.
+  t.onSetImpl(key, f)
+  t
+
+
 macro on*(target: untyped, events: varargs[untyped]): auto =
   ## Insert the specified `events` as events on `target` and **return
   ## `target`**.
@@ -199,10 +215,7 @@ macro on*(target: untyped, events: varargs[untyped]): auto =
 
   template onImpl[T, S: not openArray](t: T, event: S): auto =
     ## Helper that sets a single event.
-    when not defined(js):
-      debugEcho "Event listeners are not supported outside JavaScript: ", event
-    else:
-      dom.addEventListener(t, event[0], event[1])
+    t.onSetImpl(event[0], event[1])
   template onImpl[T, S](t: T, events: openArray[S]): auto =
     ## Helper that adds an open array of events. We unroll loops of up to
     ## eight elements here.
@@ -323,9 +336,7 @@ template tag*(n: HTMLNode): auto =
 template createElementImpl(tag, attributes, children, events: auto): auto =
   ## Construct an element.
   when not defined(js):
-    when len(events) > 0:
-      debugEcho "Event listeners are not supported outside JavaScript: ", events
-    xmltree.newXmlTree(tag, children, attributes.toXmlAttributes)
+    xmltree.newXmlTree(tag, children, attributes.toXmlAttributes).on(events)
   else:
     dom.createElement(document, tag).attr(attributes).append(children).on(events)
 
@@ -430,7 +441,7 @@ macro createElement(args: varargs[untyped]): untyped =
         let fs = selector[1..^1].split('=', 1)
         addAttribute fs[0], fs[1].strip(chars = {'\'', '"'})
       else:
-        debugEcho "unknown selector: " & selector
+        debugEcho &"unknown selector: {selector}"
 
 
   # Process selector and update tag and attributes
