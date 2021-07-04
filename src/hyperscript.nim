@@ -8,7 +8,7 @@ const AttributeNodes = {nnkExprEqExpr, nnkExprColonExpr}
 const EventNodes = RoutineNodes + {nnkInfix}
 
 when not defined(js):
-  import xmltree
+  import xmltree, strtabs
   export toXmlAttributes # TODO: maybe we could get rid of this?
 
   type HTMLNode* = xmltree.XmlNode
@@ -23,7 +23,7 @@ else:
 
 macro append*(target: untyped, children: varargs[untyped]): auto =
   ## Insert the specified `content` as the last child of `target` and
-  ## **returns `target`**.
+  ## **return `target`**.
 
 
   template appendImpl[T, S: not openArray](t: T, child: S): auto =
@@ -96,18 +96,28 @@ macro append*(target: untyped, children: varargs[untyped]): auto =
       `t`
 
 
+template attrSetImpl*(t, key, val: auto): auto =
+  ## Helper that sets a single attribute in-place (nothing is returned).
+  when not defined(js):
+    xmltree.attrs(t)[key] = val
+  else:
+    dom.setAttribute(t, key, val)
+template attr*[T](target: T, key, val: string): auto =
+  ## Insert the specified `attribute` as an attribute of `target` and **return
+  ## `target`**.
+  let t = target # Evaluate once.
+  t.attrSetImpl(key, val)
+  t
+
+
 macro attr*(target: untyped, attributes: varargs[untyped]): auto =
-  ## Insert the specified `attributes` as attributes of `target` and **returns
+  ## Insert the specified `attributes` as attributes of `target` and **return
   ## `target`**.
 
 
   template attrImpl[T, S: not openArray](t: T, attribute: S): auto =
     ## Helper that sets a single attribute.
-    when not defined(js):
-      # TODO: not the prettiest thing in the world
-      xmltree.attrs(t, xmltree.attrs(t) & attribute)
-    else:
-      dom.setAttribute(t, attribute[0], attribute[1])
+    t.attrSetImpl(attribute[0], attribute[1])
   template attrImpl[T, S](t: T, attributes: openArray[S]): auto =
     ## Helper that adds an open array of attributes. We unroll loops of up to
     ## eight elements here.
@@ -183,7 +193,7 @@ template attr*[T](t: T, attribute: string): auto =
       ""
 
 macro on*(target: untyped, events: varargs[untyped]): auto =
-  ## Insert the specified `events` as events on `target` and **returns
+  ## Insert the specified `events` as events on `target` and **return
   ## `target`**.
 
 

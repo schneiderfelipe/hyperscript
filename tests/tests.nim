@@ -313,3 +313,11 @@ suite "Constructing more complex use cases":
             "reusable, interactive HTML widgets. "))
     check example is HTMLNode
     check example.tag == "div"
+
+
+suite "Modifying simple HTML/SVG tags":
+  test "can add an attribute":
+    check h("div") is HTMLNode
+    check h("div").tag == "div"
+    check h("div").attr("class") == ""
+    check h("div").attr("class", "header").attr("class") == "header"
