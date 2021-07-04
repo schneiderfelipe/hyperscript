@@ -144,10 +144,10 @@ suite "Using selector notation":
     check h("div#header").tag == "div"
     check h("div#header").attr("id") == "header"
 
-  test "two ids get concatenated":
+  test "the last given id takes precedence":
     check h("div#header#main") is HTMLNode
     check h("div#header#main").tag == "div"
-    check h("div#header#main").attr("id") == "headermain"
+    check h("div#header#main").attr("id") == "main"
 
   test "can indicate a class":
     check h("div.header") is HTMLNode
@@ -197,7 +197,7 @@ suite "Using selector notation":
   test "can mix notations":
     check h("div#header", id = "main") is HTMLNode
     check h("div#header", id = "main").tag == "div"
-    check h("div#header", id = "main").attr("id") == "headermain"
+    check h("div#header", id = "main").attr("id") == "main"
 
     check h("div.header", class = "note") is HTMLNode
     check h("div.header", class = "note").tag == "div"

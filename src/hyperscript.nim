@@ -335,7 +335,7 @@ macro createElement(args: varargs[untyped]): untyped =
 
 
   var
-    tag, id, style: string
+    tag, style: string
     classes: seq[string]
     attributes, children, events = newNimNode(nnkBracket)
 
@@ -352,14 +352,6 @@ macro createElement(args: varargs[untyped]): untyped =
   func addClass(class: NimNode) {.compileTime.} =
     ## Helper that adds a new class.
     addClass class.strVal
-
-
-  func addId(x: string) {.compileTime.} =
-    ## Helper that adds a new class.
-    id.add x
-  func addId(x: NimNode) {.compileTime.} =
-    ## Helper that adds a new class.
-    addId x.strVal
 
 
   func addStyle(styles: auto) {.compileTime.} =
@@ -399,8 +391,6 @@ macro createElement(args: varargs[untyped]): untyped =
     case key:
     of "class":
       addClass val
-    of "id":
-      addId val
     of "style":
       addStyle val
     else:
@@ -436,7 +426,7 @@ macro createElement(args: varargs[untyped]): untyped =
       of '.':
         addClass selector[1..^1]
       of '#':
-        addId selector[1..^1]
+        addAttribute "id", selector[1..^1]
       of '[':
         let fs = selector[1..^1].split('=', 1)
         addAttribute fs[0], fs[1].strip(chars = {'\'', '"'})
@@ -488,9 +478,6 @@ macro createElement(args: varargs[untyped]): untyped =
 
   if len(classes) > 0:
     addTupleExpr(attributes, "class", join(classes, " "))
-
-  if len(id) > 0:
-    addTupleExpr(attributes, "id", id)
 
   if len(style) > 0:
     addTupleExpr(attributes, "style", style.strip)
