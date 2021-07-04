@@ -4,9 +4,6 @@ import
   strutils,
   sugar
 
-const AttributeNodes = {nnkExprEqExpr, nnkExprColonExpr}
-const EventNodes = RoutineNodes + {nnkInfix}
-
 
 when not defined(js):
   import xmltree, strtabs
@@ -336,7 +333,7 @@ template tag*(n: HTMLNode): auto =
     toLowerAscii $n.nodeName
 
 
-template createTextNode(text: auto): auto =
+template createTextNode(text: string): auto =
   ## Construct a text node.
   when not defined(js):
     xmltree.newText(text)
@@ -344,7 +341,7 @@ template createTextNode(text: auto): auto =
     dom.createTextNode(document, text)
 
 
-func parseSelector(s: string): (string, seq[(string, string)]) =
+func parseSelector(s: string): (string, seq[(string, string)]) {.compileTime.} =
   ## Process a CSS selector and return a tag and attributes. Empty tags
   ## default to `div`.
 
@@ -390,7 +387,14 @@ func parseSelector(s: string): (string, seq[(string, string)]) =
   if len(result[0]) == 0:
     result[0] = "div"
 
-func parseSelector(s: NimNode): (NimNode, NimNode) =
+
+func addTupleExpr(xs, x, y: auto) {.compileTime.} =
+  ## Helper for inserting tuples expressions to expressions.
+  xs.add quote do:
+    (`x`, `y`)
+
+
+func parseSelector(s: NimNode): (NimNode, NimNode) {.compileTime.} =
   ## Process a *literal* CSS selector **at compile-time** and return **code**
   ## for a tag and attributes. Empty tags default to `div`.
   s.expectKind nnkStrLit
@@ -402,118 +406,137 @@ func parseSelector(s: NimNode): (NimNode, NimNode) =
 
 macro createElement(args: varargs[untyped]): untyped =
   ## Construct an element.
-  var (tag, attrs) = parseSelector(args[0])
 
-  var
-    style: string
-    children, events = newNimNode(nnkBracket)
+  func processArgs(args: auto, attrs = newNimNode(nnkBracket)): (NimNode, NimNode, NimNode) {.compileTime.} =
+    ## Process arguments and return attributes, children and events.
 
-
-  func addTupleExpr(container, first, second: auto) {.compileTime.} =
-    ## Helper for adding tuple expressions to expression collections.
-    container.add quote do:
-      (`first`, `second`)
+    result = (attrs, newNimNode(nnkBracket), newNimNode(nnkBracket))
 
 
-  func addStyle(styles: auto) {.compileTime.} =
-    ## Helper that adds styles.
-    style.add styles
-  func addStyle(styles: NimNode) {.compileTime.} =
-    ## Helper that adds styles.
-    case styles.kind:
-    of nnkTableConstr:
-      for pair in styles:
-        # TODO: ignore nil?
-        addStyle pair[0].strVal & ": " & pair[1].strVal & "; "
-    else:
-      addStyle styles.strVal.strip
-      if style[^1] != ';':
-        addStyle ';'
+    const AttributeNodes = {nnkExprEqExpr, nnkExprColonExpr}
+    const AttributeCollectionNodes = {nnkTableConstr}
+    const TextNodes = {nnkStrLit}
+    const ChildrenCollectionNodes = {nnkBracket}
+    const EventNodes = RoutineNodes + {nnkInfix}
+    const IgnoredNodes = {nnkNilLit}
 
 
-  func isEvent(val: auto): bool {.compileTime.} =
-    ## Check if a value is a valid event callback.
-    false
-  func isEvent(val: NimNode): bool {.compileTime.} =
-    ## Check if a value is a valid event callback.
-    val.kind in EventNodes
-
-  func addEvent(key: sink string, val: auto) {.compileTime.} =
-    ## Helper that adds events.
-    key.removePrefix("on")
-    addTupleExpr(events, key, val)
-  func addEvent(pair: NimNode) {.compileTime.} =
-    ## Helper that adds events.
-    addEvent(pair[0].strVal, pair[1])
+    # TODO: this strategy is interesting for making things work both at
+    # compile-time and at runtime.
+    template isEvent(val: auto): bool =
+      ## Check if a value is a valid event callback.
+      false
+    template isEvent(val: NimNode): bool =
+      ## Check if a value is a valid event callback.
+      val.kind in EventNodes
 
 
-  func addAttribute(key, val: auto) {.compileTime.} =
-    ## Helper that adds a new attribute.
-    case key:
-    of "style":
-      addStyle val
-    else:
-      if isEvent(val):
-        addEvent(key, val)
+    template addEvent(key: var string, val: auto) =
+      ## Helper that adds events.
+      key.removePrefix("on")
+      addTupleExpr(result[2], key, val)
+    template addEvent(pair: NimNode) =
+      ## Helper that adds events.
+      addEvent(pair[0].strVal, pair[1])
+
+
+    # TODO: the current way to handle styles is strongly coupled and won't
+    # properly work at runtime.
+    var style: string
+    template addStyle(styles: auto) =
+      ## Helper that adds styles.
+      style.add styles
+    template addStyle(styles: NimNode) =
+      ## Helper that adds styles.
+      case styles.kind:
+      of AttributeCollectionNodes:
+        for pair in styles:
+          # TODO: ignore nil?
+          addStyle pair[0].strVal & ": " & pair[1].strVal & "; "
       else:
-        addTupleExpr(attrs, key, val)
-  func addAttribute(attr: NimNode) {.compileTime.} =
-    ## Helper that adds a new attribute.
-    attr.expectKind AttributeNodes
-    if attr[1].kind != nnkNilLit and attr[1] != ident"false":
-      if attr[1] == ident"true":
-        addTupleExpr(attrs, attr[0].strVal, attr[0].strVal)
+        addStyle styles.strVal.strip
+        if style[^1] != ';':
+          addStyle ';'
+
+
+    template addAttrOrEvent(key: var string, val: auto) =
+      ## Helper that adds a new attribute.
+      case key:
+      of "style":
+        addStyle val
       else:
-        addAttribute(attr[0].strVal, attr[1])
+        if isEvent(val):
+          addEvent(key, val)
+        else:
+          addTupleExpr(result[0], key, val)
+    template addAttrOrEvent(attr: NimNode) =
+      ## Helper that adds a new attribute.
+      if attr[1].kind notin IgnoredNodes and attr[1] != ident"false":
+        if attr[1] == ident"true":
+          addTupleExpr(result[0], attr[0].strVal, attr[0].strVal)
+        else:
+          var k = attr[0].strVal
+          addAttrOrEvent(k, attr[1])
 
 
-  func addChild(child: NimNode) {.compileTime.} =
-    ## Helper that adds a new child.
-    case child.kind:
-    of nnkStrLit:
-      children.add quote do:
-        createTextNode `child`
-    of nnkNilLit:
-      discard
-    else:
-      children.add child
+    template addTextOrChild(child: NimNode) =
+      ## Helper that adds a new child. This is also used when a bracket is
+      ## found in the arguments.
+      case child.kind:
+      of IgnoredNodes:
+        discard
+      of TextNodes:
+        result[1].add quote do:
+          createTextNode `child.strVal`
+      else:
+        result[1].add child
 
 
-  for arg in args[1..^1]:
-    case arg.kind:
-    of AttributeNodes:
-      addAttribute arg
-    of nnkTableConstr:
-      for pair in arg:
-        addAttribute pair
-    of nnkBracket:
-      for child in arg:
-        addChild child
-    else:
-      addChild arg
+    for arg in args:
+      case arg.kind:
+      of AttributeCollectionNodes:
+        for x in arg:
+          addAttrOrEvent x
+      of AttributeNodes:
+        addAttrOrEvent arg
+      of ChildrenCollectionNodes:
+        for x in arg:
+          addTextOrChild x
+      of IgnoredNodes:
+        discard
+      of TextNodes:
+        addTextOrChild arg
+      else:
+        # TODO: here we can't be sure that this is a child, we need to look
+        # into its type. In fact, we can do better by providing bool
+        # functions for checking if an argument is an event, child,
+        # attribute, etc.
+        addTextOrChild arg
 
 
-  if len(style) > 0:
-    addTupleExpr(attrs, "style", style.strip)
+    if len(style) > 0:
+      addTupleExpr(result[0], "style", style.strip)
+
+    if len(result[0]) == 0:
+      result[0] = quote do:
+        newSeq[(string, string)]()
+
+    if len(result[1]) == 0:
+      result[1] = quote do:
+        newSeq[HTMLNode]()
+
+    if len(result[2]) == 0:
+      result[2] = quote do:
+        newSeq[(string, (e: HTMLEvent) -> void)]()
 
 
-  if len(attrs) == 0:
-    attrs = quote do:
-      newSeq[(string, string)]()
-
-  if len(children) == 0:
-    children = quote do:
-      newSeq[HTMLNode]()
-
-  if len(events) == 0:
-    events = quote do:
-      newSeq[(string, (e: HTMLEvent) -> void)]()
-
+  let (tag, selattrs) = parseSelector args[0]
+  let (attrs, children, events) = processArgs(args[1..^1], selattrs)
 
   result = quote do:
     on(
       when not defined(js):
-        xmltree.newXmlTree(`tag`, `children`, `attrs`.toXmlAttributes)
+        xmltree.newXmlTree(`tag`, `children`, toXmlAttributes(`attrs`))
       else:
         dom.createElement(document, `tag`).attr(`attrs`).append(`children`),
       `events`
