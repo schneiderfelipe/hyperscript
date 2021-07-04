@@ -10,7 +10,7 @@ const EventNodes = RoutineNodes + {nnkInfix}
 
 when not defined(js):
   import xmltree, strtabs
-  export toXmlAttributes # TODO: maybe we could get rid of this?
+  export toXmlAttributes, `attrs=` # TODO: maybe we could get rid of this?
 
   type HTMLNode* = xmltree.XmlNode
   type HTMLEvent* = void # Dummy type
@@ -100,7 +100,10 @@ macro append*(target: untyped, children: varargs[untyped]): auto =
 template attrSetImpl*(t, key, val: auto): auto =
   ## Helper that sets a single attribute in-place (nothing is returned).
   when not defined(js):
-    xmltree.attrs(t)[key] = val
+    if xmltree.attrs(t) != nil:
+      xmltree.attrs(t)[key] = val
+    else:
+      t.attrs = {key: val}.toXmlAttributes
   else:
     dom.setAttribute(t, key, val)
 template attr*[T](target: T, key, val: string): auto =
@@ -333,14 +336,6 @@ template tag*(n: HTMLNode): auto =
     toLowerAscii $n.nodeName
 
 
-template createElementImpl(tag, attributes, children, events: auto): auto =
-  ## Construct an element.
-  when not defined(js):
-    xmltree.newXmlTree(tag, children, attributes.toXmlAttributes).on(events)
-  else:
-    dom.createElement(document, tag).attr(attributes).append(children).on(events)
-
-
 template createTextNode(text: auto): auto =
   ## Construct a text node.
   when not defined(js):
@@ -507,7 +502,13 @@ macro createElement(args: varargs[untyped]): untyped =
 
 
   result = quote do:
-    createElementImpl(`tag`, `attributes`, `children`, `events`)
+    on(
+      when not defined(js):
+        xmltree.newXmlTree(`tag`, `children`, `attributes`.toXmlAttributes)
+      else:
+        dom.createElement(document, `tag`).attr(`attributes`).append(`children`),
+      `events`
+    )
 
 
 template h*(args: varargs[untyped]): untyped =
