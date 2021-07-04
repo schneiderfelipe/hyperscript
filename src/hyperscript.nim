@@ -344,15 +344,69 @@ template createTextNode(text: auto): auto =
     dom.createTextNode(document, text)
 
 
+func parseSelector(s: string): (string, seq[(string, string)]) =
+  ## Process a CSS selector and return a tag and attributes. Empty tags
+  ## default to `div`.
+
+  template addSel(s: string) =
+    if len(s) > 0:
+      case s[0]:
+      of '.':
+        result[1].add ("class", s[1..^1])
+      of '#':
+        result[1].add ("id", s[1..^1])
+      of '[':
+        let fs = s[1..^1].split('=', 1)
+        result[1].add (fs[0], fs[1].strip(chars = {'\'', '"'}))
+      else:
+        debugEcho &"could not parse CSS selector: \"{s}\""
+
+  var j = s.find({'.', '#', '['})
+  if j == -1:
+    # Only a tag
+    result[0] = s
+  else:
+    result[0] = s[0..<j]
+
+    var i = j
+    j += 1
+    while j < len(s):
+      case s[i]:
+      of '.', '#':
+        if s[j] in {'.', '#', '['}:
+          addSel s[i..<j]
+          i = j
+      of '[':
+        if s[j] == ']':
+          addSel s[i..<j]
+          i = j + 1
+      else:
+        discard
+      j += 1
+
+    # Last item
+    addSel s[i..<j]
+
+  if len(result[0]) == 0:
+    result[0] = "div"
+
+func parseSelector(s: NimNode): (NimNode, NimNode) =
+  ## Process a *literal* CSS selector **at compile-time** and return **code**
+  ## for a tag and attributes. Empty tags default to `div`.
+  s.expectKind nnkStrLit
+  let (tag, attrs) = parseSelector s.strVal
+  result = (newLit tag, newNimNode(nnkBracket))
+  for a in attrs:
+    result[1].add newLit a
+
+
 macro createElement(args: varargs[untyped]): untyped =
   ## Construct an element.
-  args[0].expectKind nnkStrLit
-  let selector = args[0].strVal
-
+  var (tag, attrs) = parseSelector(args[0])
 
   var
-    tag, style: string
-    attributes, children, events = newNimNode(nnkBracket)
+    style: string
+    children, events = newNimNode(nnkBracket)
 
 
   func addTupleExpr(container, first, second: auto) {.compileTime.} =
@@ -402,13 +456,13 @@ macro createElement(args: varargs[untyped]): untyped =
       if isEvent(val):
         addEvent(key, val)
       else:
-        addTupleExpr(attributes, key, val)
+        addTupleExpr(attrs, key, val)
   func addAttribute(attr: NimNode) {.compileTime.} =
     ## Helper that adds a new attribute.
     attr.expectKind AttributeNodes
     if attr[1].kind != nnkNilLit and attr[1] != ident"false":
       if attr[1] == ident"true":
-        addTupleExpr(attributes, attr[0].strVal, attr[0].strVal)
+        addTupleExpr(attrs, attr[0].strVal, attr[0].strVal)
       else:
         addAttribute(attr[0].strVal, attr[1])
 
@@ -423,48 +477,6 @@ macro createElement(args: varargs[untyped]): untyped =
       discard
     else:
       children.add child
-
-
-  func addSelector(selector: string) {.compileTime.} =
-    if len(selector) > 0:
-      case selector[0]:
-      of '.':
-        addAttribute "class", selector[1..^1]
-      of '#':
-        addAttribute "id", selector[1..^1]
-      of '[':
-        let fs = selector[1..^1].split('=', 1)
-        addAttribute fs[0], fs[1].strip(chars = {'\'', '"'})
-      else:
-        debugEcho &"unknown selector: {selector}"
-
-
-  # Process selector and update tag and attributes
-  var j = selector.find({'.', '#', '['})
-  if j == -1:
-    # Only a tag
-    tag = selector
-  else:
-    tag = selector[0..<j]
-
-    var i = j
-    j += 1
-    while j < len(selector):
-      case selector[i]:
-      of '.', '#':
-        if selector[j] in {'.', '#', '['}:
-          addSelector selector[i..<j]
-          i = j
-      of '[':
-        if selector[j] == ']':
-          addSelector selector[i..<j]
-          i = j + 1
-      else:
-        discard
-      j += 1
-
-    # Last item
-    addSelector selector[i..<j]
 
 
   for arg in args[1..^1]:
@@ -482,14 +494,11 @@ macro createElement(args: varargs[untyped]): untyped =
 
 
   if len(style) > 0:
-    addTupleExpr(attributes, "style", style.strip)
+    addTupleExpr(attrs, "style", style.strip)
 
 
-  if len(tag) == 0:
-    tag = "div"
-
-  if len(attributes) == 0:
-    attributes = quote do:
+  if len(attrs) == 0:
+    attrs = quote do:
       newSeq[(string, string)]()
 
   if len(children) == 0:
@@ -504,9 +513,9 @@ macro createElement(args: varargs[untyped]): untyped =
   result = quote do:
     on(
       when not defined(js):
-        xmltree.newXmlTree(`tag`, `children`, `attributes`.toXmlAttributes)
+        xmltree.newXmlTree(`tag`, `children`, `attrs`.toXmlAttributes)
       else:
-        dom.createElement(document, `tag`).attr(`attributes`).append(`children`),
+        dom.createElement(document, `tag`).attr(`attrs`).append(`children`),
       `events`
     )
 
