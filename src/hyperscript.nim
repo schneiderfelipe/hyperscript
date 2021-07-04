@@ -4,8 +4,6 @@ import
   sugar
 
 
-
-
 const AttributeNodes = {nnkExprEqExpr, nnkExprColonExpr}
 const EventNodes = RoutineNodes + {nnkInfix}
 
