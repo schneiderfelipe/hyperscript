@@ -1,8 +1,9 @@
-import hyperscript, dom
+import hyperscript, macros
 
-when isMainModule:
-  let example = h("#main", class="note",
-    h("p", style: {"background": "yellow"}, "Minimal example"),
+expandMacros:
+  let example = h("p#example",
+    h("input.name[value=Name]",
+      style: {"background": "yellow"},
+    ),
   )
-
-  document.body.appendChild(example)
+  # discard document.body.append example
