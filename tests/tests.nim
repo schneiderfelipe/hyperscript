@@ -321,3 +321,9 @@ suite "Modifying simple HTML/SVG tags":
     check h("div").tag == "div"
     check h("div").attr("class") == ""
     check h("div").attr("class", "header").attr("class") == "header"
+
+  test "can add a child":
+    check h("div") is HTMLNode
+    check h("div").tag == "div"
+    check h("div").len == 0
+    check h("div").append(h("p")).len == 1
