@@ -6,17 +6,20 @@ import
 
 
 when not defined(js):
-  import xmltree, strtabs
-  export toXmlAttributes, `attrs=` # TODO: maybe we could get rid of this?
+  from xmltree import toXmlAttributes, `attrs=`
+  import strtabs
+  export toXmlAttributes, `attrs=`
 
-  type HTMLNode* = xmltree.XmlNode
-  type HTMLEvent* = void # Dummy type
+  type
+    Element* = xmltree.XmlNode
+    HEvent* = void # Dummy type
 else:
-  import dom
-  export document # TODO: maybe we could get rid of this?
+  from dom import document
+  export document
 
-  type HTMLNode* = dom.Element
-  type HTMLEvent* = dom.Event
+  type
+    Element* = dom.Element
+    HEvent* = dom.Event
 
 
 macro append*(target: untyped, children: varargs[untyped]): auto =
@@ -197,7 +200,8 @@ template attr*[T](t: T, attribute: string): auto =
 template onSetImpl*(t, key, f: auto): auto =
   ## Helper that sets a single event in-place (nothing is returned).
   when not defined(js):
-    debugEcho "Event listeners are not supported outside JavaScript: got \"" & key & "\""
+    debugEcho "Event listeners are not supported outside JavaScript: got \"" &
+        key & "\""
   else:
     dom.addEventListener(t, key, f)
 template on*[T](target: T, key: string, f: auto): auto =
@@ -280,7 +284,7 @@ macro on*(target: untyped, events: varargs[untyped]): auto =
       `t`
 
 
-template style*(n: HTMLNode): auto =
+template style*(n: Element): auto =
   ## Get styles.
   when not defined(js):
     xmltree.attr(n, "style")
@@ -288,7 +292,7 @@ template style*(n: HTMLNode): auto =
     n.style
 
 
-template len*(n: HTMLNode): auto =
+template len*(n: Element): auto =
   ## Get the number of children.
   when not defined(js):
     xmltree.len(n)
@@ -296,7 +300,7 @@ template len*(n: HTMLNode): auto =
     dom.len(n)
 
 
-template `[]`*(n: HTMLNode, i: Natural): auto =
+template `[]`*(n: Element, i: Natural): auto =
   ## Get the ith child.
   when not defined(js):
     xmltree.`[]`(n, i)
@@ -304,7 +308,7 @@ template `[]`*(n: HTMLNode, i: Natural): auto =
     dom.`[]`(n, i)
 
 
-template `$`*(n: HTMLNode): auto =
+template `$`*(n: Element): auto =
   ## Represent a node as a string.
   when not defined(js):
     xmltree.`$`(n)
@@ -312,7 +316,7 @@ template `$`*(n: HTMLNode): auto =
     n.outerHTML
 
 
-template text*(n: HTMLNode): auto =
+template text*(n: Element): auto =
   ## Get inner text.
   when not defined(js):
     xmltree.innerText(n)
@@ -323,7 +327,7 @@ template text*(n: HTMLNode): auto =
       n.data
 
 
-template tag*(n: HTMLNode): auto =
+template tag*(n: Element): auto =
   ## Get tag name.
   when not defined(js):
     xmltree.tag(n)
@@ -407,7 +411,8 @@ func parseSelector(s: NimNode): (NimNode, NimNode) {.compileTime.} =
 macro createElement(args: varargs[untyped]): untyped =
   ## Construct an element.
 
-  func processArgs(args: auto, attrs = newNimNode(nnkBracket)): (NimNode, NimNode, NimNode) {.compileTime.} =
+  func processArgs(args: auto, attrs = newNimNode(nnkBracket)): (NimNode,
+      NimNode, NimNode) {.compileTime.} =
     ## Process arguments and return attributes, children and events.
 
     result = (attrs, newNimNode(nnkBracket), newNimNode(nnkBracket))
@@ -437,7 +442,8 @@ macro createElement(args: varargs[untyped]): untyped =
       addTupleExpr(result[2], key, val)
     template addEvent(pair: NimNode) =
       ## Helper that adds events.
-      addEvent(pair[0].strVal, pair[1])
+      var k = pair[0].strVal
+      addEvent(k, pair[1])
 
 
     # TODO: the current way to handle styles is strongly coupled and won't
@@ -523,24 +529,22 @@ macro createElement(args: varargs[untyped]): untyped =
 
     if len(result[1]) == 0:
       result[1] = quote do:
-        newSeq[HTMLNode]()
+        newSeq[Element]()
 
     if len(result[2]) == 0:
       result[2] = quote do:
-        newSeq[(string, (e: HTMLEvent) -> void)]()
+        newSeq[(string, (e: HEvent) -> void)]()
 
 
   let (tag, selattrs) = parseSelector args[0]
   let (attrs, children, events) = processArgs(args[1..^1], selattrs)
 
+
   result = quote do:
-    on(
-      when not defined(js):
-        xmltree.newXmlTree(`tag`, `children`, toXmlAttributes(`attrs`))
-      else:
-        dom.createElement(document, `tag`).attr(`attrs`).append(`children`),
-      `events`
-    )
+    when not defined(js):
+      xmltree.newXmlTree(`tag`, `children`, toXmlAttributes(`attrs`)).on(`events`)
+    else:
+      dom.createElement(document, `tag`).attr(`attrs`).append(`children`).on(`events`)
 
 
 template h*(args: varargs[untyped]): untyped =
