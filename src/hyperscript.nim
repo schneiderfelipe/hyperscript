@@ -336,7 +336,6 @@ macro createElement(args: varargs[untyped]): untyped =
 
   var
     tag, style: string
-    classes: seq[string]
     attributes, children, events = newNimNode(nnkBracket)
 
 
@@ -344,14 +343,6 @@ macro createElement(args: varargs[untyped]): untyped =
     ## Helper for adding tuple expressions to expression collections.
     container.add quote do:
       (`first`, `second`)
-
-
-  func addClass(class: string) {.compileTime.} =
-    ## Helper that adds a new class.
-    classes.add class
-  func addClass(class: NimNode) {.compileTime.} =
-    ## Helper that adds a new class.
-    addClass class.strVal
 
 
   func addStyle(styles: auto) {.compileTime.} =
@@ -389,8 +380,6 @@ macro createElement(args: varargs[untyped]): untyped =
   func addAttribute(key, val: auto) {.compileTime.} =
     ## Helper that adds a new attribute.
     case key:
-    of "class":
-      addClass val
     of "style":
       addStyle val
     else:
@@ -424,7 +413,7 @@ macro createElement(args: varargs[untyped]): untyped =
     if len(selector) > 0:
       case selector[0]:
       of '.':
-        addClass selector[1..^1]
+        addAttribute "class", selector[1..^1]
       of '#':
         addAttribute "id", selector[1..^1]
       of '[':
@@ -434,7 +423,7 @@ macro createElement(args: varargs[untyped]): untyped =
         debugEcho "unknown selector: " & selector
 
 
-  # Process selector and update tag, id, classes and attributes
+  # Process selector and update tag and attributes
   var j = selector.find({'.', '#', '['})
   if j == -1:
     # Only a tag
@@ -475,9 +464,6 @@ macro createElement(args: varargs[untyped]): untyped =
     else:
       addChild arg
 
-
-  if len(classes) > 0:
-    addTupleExpr(attributes, "class", join(classes, " "))
 
   if len(style) > 0:
     addTupleExpr(attributes, "style", style.strip)

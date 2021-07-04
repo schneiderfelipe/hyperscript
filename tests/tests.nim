@@ -154,10 +154,10 @@ suite "Using selector notation":
     check h("div.header").tag == "div"
     check h("div.header").attr("class") == "header"
 
-  test "two classes get joined":
+  test "the last given class takes precedence":
     check h("div.header.note") is HTMLNode
     check h("div.header.note").tag == "div"
-    check h("div.header.note").attr("class") == "header note"
+    check h("div.header.note").attr("class") == "note"
 
 
   test "can indicate an attribute":
@@ -201,11 +201,11 @@ suite "Using selector notation":
 
     check h("div.header", class = "note") is HTMLNode
     check h("div.header", class = "note").tag == "div"
-    check h("div.header", class = "note").attr("class") == "header note"
+    check h("div.header", class = "note").attr("class") == "note"
 
     check h("a.link[href=/]", {class: "selected"}, "Home") is HTMLNode
     check h("a.link[href=/]", {class: "selected"}, "Home").tag == "a"
-    check h("a.link[href=/]", {class: "selected"}, "Home").attr("class") == "link selected"
+    check h("a.link[href=/]", {class: "selected"}, "Home").attr("class") == "selected"
     check h("a.link[href=/]", {class: "selected"}, "Home").attr("href") == "/"
     check h("a.link[href=/]", {class: "selected"}, "Home").text == "Home"
 
