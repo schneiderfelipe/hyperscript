@@ -329,7 +329,7 @@ template createTextNode(text: auto): auto =
 
 
 macro createElement(args: varargs[untyped]): untyped =
-  ## Construct an element with style.
+  ## Construct an element.
   args[0].expectKind nnkStrLit
   let selector = args[0].strVal
 
