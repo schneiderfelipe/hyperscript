@@ -1,6 +1,7 @@
-# hyperscript
+# `hyperscript`
 
 A functional [Nim](https://github.com/nim-lang/Nim) library for combining DOM pieces, with [compile-time superpowers](https://github.com/schneiderfelipe/hyperscript#how-does-it-work).
+`hyperscript` creates composable HTML and SVG with Nim, both client- and server-side:
 
 ```nim
 import hyperscript
@@ -27,7 +28,7 @@ let example =
 
 ## Installation
 
-hyperscript works with Nim 1.2.6+ and can be installed using [Nimble](https://github.com/nim-lang/nimble):
+`hyperscript` works with Nim 1.2.6+ and can be installed using [Nimble](https://github.com/nim-lang/nimble):
 
 ```bash
 $ nimble install hyperscript
@@ -80,6 +81,6 @@ let example =
 - [hyperscript](https://github.com/hyperhype/hyperscript) (original library, JavaScript)
 - [Hyperscript.jl](https://github.com/JuliaWeb/Hyperscript.jl) (Julia)
 
-**Convert HTML snippets to hyperscript**:
+**Convert HTML snippets to `hyperscript`**:
 - [Mithril HTML to hyperscript converter](https://arthurclemens.github.io/mithril-template-converter/)
 - [HTML2HyperScript](http://html2hscript.herokuapp.com/)
