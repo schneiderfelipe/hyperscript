@@ -15,7 +15,6 @@ when not defined(js):
     HEvent* = void # Dummy type
 else:
   from dom import document
-  export document
 
   type
     Element* = dom.Element
@@ -318,13 +317,26 @@ template `$`*(n: Element): auto =
 
 template text*(n: Element): auto =
   ## Get inner text.
+  ##
+  ## **Note**: this is not meant to work with text nodes.
   when not defined(js):
     xmltree.innerText(n)
   else:
-    if n.nodeType != dom.TextNode:
-      n.innerText
-    else:
-      n.data
+    assert n.nodeType != dom.TextNode
+    n.innerText
+
+
+template text*(n: var Element, s: string): auto =
+  ## Set inner text. This substitutes all children.
+  ##
+  ## **Note**: this is not meant to work with text nodes.
+  when not defined(js):
+    xmltree.clear(n)
+    xmltree.add(n, xmltree.newText s)
+  else:
+    assert n.nodeType != dom.TextNode
+    n.innerText = s
+  n
 
 
 template tag*(n: Element): auto =
@@ -550,6 +562,15 @@ macro createElement(args: varargs[untyped]): untyped =
 template h*(args: varargs[untyped]): untyped =
   ## Alias for `createElement`.
   unpackVarargs(createElement, args)
+
+
+when not defined(js):
+  type
+    Document = object
+      body*: Element
+  let document* = Document(body: h("body")) # Dummy document
+else:
+  export document
 
 
 when isMainModule:

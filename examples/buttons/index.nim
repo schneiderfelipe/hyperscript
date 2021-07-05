@@ -1,33 +1,20 @@
-import dom
+import hyperscript
 
+# BUG: This is nice, but code is being repeated in the output!
 
-var root = document.createElement("div")
-proc view(state: var int, display: Element) =
-  display.textContent = $state
-
-
-var state = 0
-let display = document.createElement("div")
-
-
-let decButton = document.createElement("button")
-decButton.textContent = "-"
-decButton.addEventListener("click") do (ev: Event):
+var
+  state = 0
+  display = h("div")
+discard document.body.append h("div",
+  h("button", "-").on("click") do (ev: HEvent):
   state -= 1
-  view(state, display)
-root.appendChild(decButton)
-
-
-root.appendChild(display)
-
-
-let incButton = document.createElement("button")
-incButton.textContent = "+"
-incButton.addEventListener("click") do (ev: Event):
+  discard display.text $state
+,
+  display,
+  h("button", "+").on("click") do (ev: HEvent):
   state += 1
-  view(state, display)
-root.appendChild(incButton)
+  discard display.text $state
+)
 
-
-view(state, display)
-document.body.appendChild(root)
+when not defined(js):
+  debugEcho document
