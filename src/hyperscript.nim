@@ -1,14 +1,42 @@
 import macros
 import sequtils
 import strformat
+import strtabs
 import xmltree
 
 func hxml(xs: varargs[NimNode]): XmlNode
 
 
+func getAttrKey(key: NimNode): string =
+  case key.kind:
+  of nnkStrLit:
+    result = key.strVal
+  of {nnkIdent, nnkSym}:
+    result = &"{{{key.strVal}}}"
+  else:
+    raise newException(ValueError, "unsupported attribute key kind: " & $key.kind)
+  assert len(result) > 0
+
+func getAttrValue(value: NimNode): string =
+  case value.kind:
+  of nnkStrLit:
+    result = value.strVal
+  of {nnkIdent, nnkSym}:
+    result = &"{{{value.strVal}}}"
+  else:
+    raise newException(ValueError, "unsupported attribute value kind: " & $value.kind)
+  assert len(result) > 0
+
 func addAttr(el: XmlNode, attr: NimNode) =
   attr.expectKind {nnkExprEqExpr, nnkExprColonExpr}
-  debugEcho "Got attribute: ", repr attr
+  let
+    key = getAttrKey(attr[0])
+    value = getAttrValue(attr[1])
+  if not isNil(el.attrs):
+    el.attrs[key] = value
+  else:
+    el.attrs = {key: value}.toXmlAttributes()
+  assert not isNil(el.attrs)
 
 func addCallChild(el: XmlNode, child: NimNode) =
   child.expectKind nnkCall
@@ -70,13 +98,12 @@ macro h(xs: varargs[untyped]): untyped =
   debugEcho el
 
 when isMainModule:
-  h("div",
-    "id", "{{id}}",
-    h("h1", "Hello, world!"),
-    h("h2", "This is a test."),
-    h("h3", "This is a test."),
-    h("h4", "This is a test."),
-    h("h5", "This is a test."),
-    h("h6", "This is a test."),
-    h("p", "This is a test."),
-  )
+  let a0 = "a"
+  h("a", href = a0, title = "a")
+  h("a", href = a0, title = "a", "b", href = a0, title = "a", "c", href = a0, title = "a")
+  h("a", href = a0, title = "a", "b", href = a0, title = "a", "c", href = a0, title = "a", "d", href = a0, title = "a")
+  h("a", href = a0, title = "a", "b", href = a0, title = "a", "c", href = a0, title = "a", "d", href = a0, title = "a", "e", href = a0, title = "a")
+  h("a", href = a0, title = "a", "b", href = a0, title = "a", "c", href = a0, title = "a", "d", href = a0, title = "a", "e", href = a0, title = "a", "f", href = a0, title = "a")
+
+  let a1 = "a"
+  h("a", href = a1, title = "a", "b", href = a1, title = "a", "c", href = a1, title = "a", "d", href = a1, title = "a", "e", href = a1, title = "a", "f", href = a1, title = "a")
