@@ -1,5 +1,6 @@
 import macros
 import sequtils
+import strformat
 import xmltree
 
 func addStringChild(el: XmlNode, child: NimNode) =
@@ -50,9 +51,13 @@ func addParam(el: XmlNode, param: NimNode) =
     raise newException(ValueError, "unsupported parameter kind: " & $param.kind)
 
 func tag(name: NimNode): XmlNode =
-  name.expectKind nnkStrLit
-  result = newElement(name.strVal)
-  debugEcho "Got tag: ", repr name
+  case name.kind:
+  of nnkStrLit:
+    result = newElement(name.strVal)
+  of {nnkIdent, nnkSym}:
+    result = newElement(&"{{{name.strVal}}}")
+  else:
+    raise newException(ValueError, "unsupported tag kind: " & $name.kind)
 
 func hxml(xs: varargs[NimNode]): XmlNode =
   result = tag(xs[0])
@@ -66,10 +71,5 @@ macro h(xs: varargs[untyped]): untyped =
 when isMainModule:
   h("div", "Hello", "World")
 
-  h("div",
-    "Hello",
-    "World",
-    h("p",
-      "Hello",
-      h("span",
-        "World")))
+  let name0 = "div"
+  h(name0, "Hello", "World")
