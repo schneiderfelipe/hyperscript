@@ -14,10 +14,10 @@ suite "Constructing simple HTML/SVG tags":
     check h("div") is Element
     check h("div").tag == "div"
 
-  test "can create empty tag with variable":
-    let x = "a"
-    check h(x) is HTMLNode
-    check h(x).tag == "a"
+  # test "can create empty tag with variable":
+  #   let x = "a"
+  #   check h(x) is Element
+  #   check h(x).tag == "a"
 
   test "can create tag with single attribute":
     check h("a", href = "https://github.com/schneiderfelipe/hyperscript") is Element
