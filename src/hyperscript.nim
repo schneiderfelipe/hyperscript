@@ -3,6 +3,9 @@ import sequtils
 import strformat
 import xmltree
 
+func hxml(xs: varargs[NimNode]): XmlNode
+
+
 func addAttr(el: XmlNode, attr: NimNode) =
   attr.expectKind {nnkExprEqExpr, nnkExprColonExpr}
   debugEcho "Got attribute: ", repr attr
@@ -12,7 +15,7 @@ func addCallChild(el: XmlNode, child: NimNode) =
   child[0].expectKind {nnkIdent, nnkSym}
   if child[0].strVal != "h":
     raise newException(ValueError, "unsupported call child: " & repr child)
-  debugEcho "Got child: ", repr child
+  el.add hxml(child[1..^1].toSeq)
 
 func addChild(el: XmlNode, child: NimNode) =
   case child.kind:
@@ -67,19 +70,13 @@ macro h(xs: varargs[untyped]): untyped =
   debugEcho el
 
 when isMainModule:
-  h("div", "Hello", "World")
-
-  let name0 = "div"
-  h(name0, "Hello", "World")
-
-  let
-    name1 = "div"
-    name2 = "Hello"
-    name3 = "World"
-  h(name1, [name2, name3])
-
-  let
-    name4 = "div"
-    name5 = "Hello"
-    name6 = "World"
-  h(name4, (name5, name6))
+  h("div",
+    "id", "{{id}}",
+    h("h1", "Hello, world!"),
+    h("h2", "This is a test."),
+    h("h3", "This is a test."),
+    h("h4", "This is a test."),
+    h("h5", "This is a test."),
+    h("h6", "This is a test."),
+    h("p", "This is a test."),
+  )
