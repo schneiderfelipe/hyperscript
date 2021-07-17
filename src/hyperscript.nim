@@ -1,4 +1,5 @@
 import macros
+import sequtils
 import xmltree
 
 func addStringChild(el: XmlNode, child: NimNode) =
@@ -13,7 +14,7 @@ func addCallChild(el: XmlNode, child: NimNode) =
   child.expectKind nnkCall
   child[0].expectKind {nnkIdent, nnkSym}
   if child[0].strVal != "h":
-    raise newException(ValueError, "unsupported parameter: " & repr child)
+    raise newException(ValueError, "unsupported call child: " & repr child)
   debugEcho "Got child: ", repr child
 
 func addChild(el: XmlNode, child: NimNode) =
@@ -23,7 +24,7 @@ func addChild(el: XmlNode, child: NimNode) =
   of nnkStrLit:
     el.addStringChild(child)
   else:
-    raise newException(ValueError, "unsupported parameter: " & repr child)
+    raise newException(ValueError, "unsupported child kind: " & $child.kind)
 
 func addChildren(el: XmlNode, chilren: NimNode) =
   chilren.expectKind {nnkBracket, nnkPar}
@@ -53,64 +54,22 @@ func tag(name: NimNode): XmlNode =
   result = newElement(name.strVal)
   debugEcho "Got tag: ", repr name
 
-macro h(xs: varargs[untyped]): untyped =
-  let el = tag(xs[0])
+func hxml(xs: varargs[NimNode]): XmlNode =
+  result = tag(xs[0])
   for x in xs[1..^1]:
-    el.addParam(x)
+    result.addParam(x)
+
+macro h(xs: varargs[untyped]): untyped =
+  let el = hxml(xs.toSeq)
   debugEcho el
 
 when isMainModule:
-  h("a")
-  h("a", "b")
-  h("a", "b", "c")
-  h("a", "b", "c", "d")
-  h("a", "b", "c", "d", "e")
-  h("a", "b", "c", "d", "e", "f")
+  h("div", "Hello", "World")
 
-  h("a", href = "b")
-  h("a", href = "b", title = "c")
-  h("a", href = "b", title = "c", target = "d")
-  h("a", href = "b", title = "c", target = "d", rel = "e")
-  h("a", href = "b", title = "c", target = "d", rel = "e", hreflang = "f")
-  h("a", href = "b", title = "c", target = "d", rel = "e", hreflang = "f", type = "g")
-
-  h("a", href: "b")
-  h("a", href: "b", title: "c")
-  h("a", href: "b", title: "c", target: "d")
-  h("a", href: "b", title: "c", target: "d", rel: "e")
-  h("a", href: "b", title: "c", target: "d", rel: "e", hreflang: "f")
-  h("a", href: "b", title: "c", target: "d", rel: "e", hreflang: "f", type: "g")
-
-  h("a", {href = "b"})
-  h("a", {href = "b", title = "c"})
-  h("a", {href = "b", title = "c", target = "d"})
-  h("a", {href = "b", title = "c", target = "d", rel = "e"})
-  h("a", {href = "b", title = "c", target = "d", rel = "e", hreflang = "f"})
-  h("a", {href = "b", title = "c", target = "d", rel = "e", hreflang = "f", type = "g"})
-
-  h("a", {href: "b"})
-  h("a", {href: "b", title: "c"})
-  h("a", {href: "b", title: "c", target: "d"})
-  h("a", {href: "b", title: "c", target: "d", rel: "e"})
-  h("a", {href: "b", title: "c", target: "d", rel: "e", hreflang: "f"})
-  h("a", {href: "b", title: "c", target: "d", rel: "e", hreflang: "f", type: "g"})
-
-  h("a", h("div"))
-  h("a", h("div"), h("span"))
-  h("a", h("div"), h("span"), h("b"))
-  h("a", h("div"), h("span"), h("b"), h("i"))
-
-  h("a", h("div"), href = "b")
-  h("a", h("div"), href = "b", title = "c")
-  h("a", h("div"), href = "b", title = "c", target = "d")
-  h("a", h("div"), href = "b", title = "c", target = "d", rel = "e")
-
-  h("a", h("div"), {href = "b"})
-  h("a", h("div"), {href = "b", title = "c"})
-  h("a", h("div"), {href = "b", title = "c", target = "d"})
-  h("a", h("div"), {href = "b", title = "c", target = "d", rel = "e"})
-
-  h("a", h("div"), h("span"), {href = "b"})
-  h("a", h("div"), h("span"), {href = "b", title = "c"})
-  h("a", h("div"), h("span"), {href = "b", title = "c", target = "d"})
-  h("a", h("div"), h("span"), {href = "b", title = "c", target = "d", rel = "e"})
+  h("div",
+    "Hello",
+    "World",
+    h("p",
+      "Hello",
+      h("span",
+        "World")))
