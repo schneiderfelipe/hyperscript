@@ -28,7 +28,7 @@ let example =
 
 ## Installation
 
-`hyperscript` works with Nim 1.2.6+ and can be installed using [Nimble](https://github.com/nim-lang/nimble):
+`hyperscript` works with Nim 1.4.0+ and can be installed using [Nimble](https://github.com/nim-lang/nimble):
 
 ```bash
 $ nimble install hyperscript
