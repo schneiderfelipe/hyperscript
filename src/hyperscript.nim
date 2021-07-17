@@ -3,10 +3,6 @@ import sequtils
 import strformat
 import xmltree
 
-func addStringChild(el: XmlNode, child: NimNode) =
-  child.expectKind nnkStrLit
-  debugEcho "Got child: ", repr child
-
 func addAttr(el: XmlNode, attr: NimNode) =
   attr.expectKind {nnkExprEqExpr, nnkExprColonExpr}
   debugEcho "Got attribute: ", repr attr
@@ -23,7 +19,9 @@ func addChild(el: XmlNode, child: NimNode) =
   of nnkCall:
     el.addCallChild(child)
   of nnkStrLit:
-    el.addStringChild(child)
+    el.add newText(child.strVal)
+  of {nnkIdent, nnkSym}:
+    el.add newText(&"{{{child.strVal}}}")
   else:
     raise newException(ValueError, "unsupported child kind: " & $child.kind)
 
@@ -73,3 +71,15 @@ when isMainModule:
 
   let name0 = "div"
   h(name0, "Hello", "World")
+
+  let
+    name1 = "div"
+    name2 = "Hello"
+    name3 = "World"
+  h(name1, [name2, name3])
+
+  let
+    name4 = "div"
+    name5 = "Hello"
+    name6 = "World"
+  h(name4, (name5, name6))
