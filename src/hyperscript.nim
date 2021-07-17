@@ -6,26 +6,27 @@ import xmltree
 
 func hxml(xs: varargs[NimNode]): XmlNode
 
+const RunnableNodes = {nnkIdent, nnkSym, nnkDotExpr} + CallNodes
 
 func getAttrKey(key: NimNode): string =
   case key.kind:
   of nnkStrLit:
     result = key.strVal
-  of {nnkIdent, nnkSym}:
-    result = &"{{{key.strVal}}}"
+  of RunnableNodes:
+    result = &"{{{repr(key)}}}"
   else:
     raise newException(ValueError, "unsupported attribute key kind: " & $key.kind)
-  assert len(result) > 0
+  assert len(result) > 0, "empty attribute key"
 
 func getAttrValue(value: NimNode): string =
   case value.kind:
   of nnkStrLit:
     result = value.strVal
-  of {nnkIdent, nnkSym}:
-    result = &"{{{value.strVal}}}"
+  of RunnableNodes:
+    result = &"{{{repr(value)}}}"
   else:
     raise newException(ValueError, "unsupported attribute value kind: " & $value.kind)
-  assert len(result) > 0
+  assert len(result) > 0, "empty attribute value"
 
 func addAttr(el: XmlNode, attr: NimNode) =
   attr.expectKind {nnkExprEqExpr, nnkExprColonExpr}
@@ -36,25 +37,27 @@ func addAttr(el: XmlNode, attr: NimNode) =
     el.attrs[key] = value
   else:
     el.attrs = {key: value}.toXmlAttributes()
-  assert not isNil(el.attrs)
+  assert not isNil(el.attrs), "attributes not initialized"
 
-func addCallChild(el: XmlNode, child: NimNode) =
-  child.expectKind nnkCall
-  child[0].expectKind {nnkIdent, nnkSym}
-  if child[0].strVal != "h":
-    raise newException(ValueError, "unsupported call child: " & repr child)
+func isHyperscriptCall(node: NimNode): bool =
+  node.kind == nnkCall and node[0].kind in {nnkIdent, nnkSym} and node[
+      0].strVal == "h"
+
+func addHyperscriptChild(el: XmlNode, child: NimNode) =
+  assert isHyperscriptCall(child), "expected hyperscript call"
   el.add hxml(child[1..^1].toSeq)
 
 func addChild(el: XmlNode, child: NimNode) =
-  case child.kind:
-  of nnkCall:
-    el.addCallChild(child)
-  of nnkStrLit:
-    el.add newText(child.strVal)
-  of {nnkIdent, nnkSym}:
-    el.add newText(&"{{{child.strVal}}}")
+  if isHyperscriptCall(child):
+    el.addHyperscriptChild(child)
   else:
-    raise newException(ValueError, "unsupported child kind: " & $child.kind)
+    case child.kind:
+    of nnkStrLit:
+      el.add newText(child.strVal)
+    of RunnableNodes:
+      el.add newText(&"{{{repr(child)}}}")
+    else:
+      raise newException(ValueError, "unsupported child kind: " & $child.kind)
 
 func addChildren(el: XmlNode, chilren: NimNode) =
   chilren.expectKind {nnkBracket, nnkPar}
@@ -83,8 +86,8 @@ func tag(name: NimNode): XmlNode =
   case name.kind:
   of nnkStrLit:
     result = newElement(name.strVal)
-  of {nnkIdent, nnkSym}:
-    result = newElement(&"{{{name.strVal}}}")
+  of RunnableNodes:
+    result = newElement(&"{{{repr(name)}}}")
   else:
     raise newException(ValueError, "unsupported tag kind: " & $name.kind)
 
@@ -98,12 +101,9 @@ macro h(xs: varargs[untyped]): untyped =
   debugEcho el
 
 when isMainModule:
-  let a0 = "a"
-  h("a", href = a0, title = "a")
-  h("a", href = a0, title = "a", "b", href = a0, title = "a", "c", href = a0, title = "a")
-  h("a", href = a0, title = "a", "b", href = a0, title = "a", "c", href = a0, title = "a", "d", href = a0, title = "a")
-  h("a", href = a0, title = "a", "b", href = a0, title = "a", "c", href = a0, title = "a", "d", href = a0, title = "a", "e", href = a0, title = "a")
-  h("a", href = a0, title = "a", "b", href = a0, title = "a", "c", href = a0, title = "a", "d", href = a0, title = "a", "e", href = a0, title = "a", "f", href = a0, title = "a")
-
-  let a1 = "a"
-  h("a", href = a1, title = "a", "b", href = a1, title = "a", "c", href = a1, title = "a", "d", href = a1, title = "a", "e", href = a1, title = "a", "f", href = a1, title = "a")
+  var count = 0
+  h("div", "id": "app", "class": "app", "data-version": version,
+    h("button", "+", onclick: increment),
+    h("div", [count]),
+    h("button", "-", onclick: decrement),
+  )
