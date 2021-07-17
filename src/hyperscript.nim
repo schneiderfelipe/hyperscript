@@ -357,13 +357,82 @@ template createTextNode(text: string): auto =
     dom.createTextNode(document, text)
 
 
-func parseSelector(s: string): (string, seq[(string, string)]) {.compileTime.} =
-  ## Process a CSS selector and return a tag and attributes. Empty tags
-  ## default to `div`.
+macro createElement(args: varargs[untyped]): untyped =
+  ## Construct an element.
+  args[0].expectKind nnkStrLit
+  let selector = args[0].strVal
 
-  template addSel(s: string) =
-    if len(s) > 0:
-      case s[0]:
+
+  var
+    tag: string
+    attributes, children, events = newNimNode(nnkBracket)
+
+
+  func addTupleExpr(container, first, second: auto) {.compileTime.} =
+    ## Helper for adding tuple expressions to expression collections.
+    container.add quote do:
+      (`first`, `second`)
+
+
+  func isEvent(val: auto): bool {.compileTime.} =
+    ## Check if a value is a valid event callback.
+    false
+  func isEvent(val: NimNode): bool {.compileTime.} =
+    ## Check if a value is a valid event callback.
+    val.kind in EventNodes
+
+  func addEvent(key: sink string, val: auto) {.compileTime.} =
+    ## Helper that adds events.
+    key.removePrefix("on")
+    addTupleExpr(events, key, val)
+  func addEvent(pair: NimNode) {.compileTime.} =
+    ## Helper that adds events.
+    addEvent(pair[0].strVal, pair[1])
+
+
+  func addAttribute(key, val: auto) {.compileTime.} =
+    ## Helper that adds a new attribute.
+    case key:
+    of "style":
+      case val.kind:
+      of nnkTableConstr:
+        for pair in val:
+          # TODO: ignore nil?
+          addAttribute "style", pair[0].strVal & ": " & pair[1].strVal & "; "
+      else:
+        addAttribute "style", val.strVal.strip
+        if style[^1] != ';':
+          addAttribute "style", ';'
+    else:
+      if isEvent(val):
+        addEvent(key, val)
+      else:
+        addTupleExpr(attributes, key, val)
+  func addAttribute(attr: NimNode) {.compileTime.} =
+    ## Helper that adds a new attribute.
+    attr.expectKind AttributeNodes
+    if attr[1].kind != nnkNilLit and attr[1] != ident"false":
+      if attr[1] == ident"true":
+        addTupleExpr(attributes, attr[0].strVal, attr[0].strVal)
+      else:
+        addAttribute(attr[0].strVal, attr[1])
+
+
+  func addChild(child: NimNode) {.compileTime.} =
+    ## Helper that adds a new child.
+    case child.kind:
+    of nnkStrLit:
+      children.add quote do:
+        createTextNode `child`
+    of nnkNilLit:
+      discard
+    else:
+      children.add child
+
+
+  func addSelector(selector: string) {.compileTime.} =
+    if len(selector) > 0:
+      case selector[0]:
       of '.':
         result[1].add ("class", s[1..^1])
       of '#':
