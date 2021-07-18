@@ -8,6 +8,24 @@ func hxml(xs: varargs[NimNode]): XmlNode
 
 const RunnableNodes = {nnkIdent, nnkSym, nnkDotExpr} + CallNodes
 
+func getTagElement(name: NimNode): XmlNode =
+  case name.kind:
+  of nnkStrLit:
+    result = newElement(name.strVal)
+  of RunnableNodes:
+    result = newElement(&"{{{repr(name)}}}")
+  else:
+    raise newException(ValueError, "unsupported tag kind: " & $name.kind)
+
+func getCommonChild(child: NimNode): XmlNode =
+  case child.kind:
+  of nnkStrLit:
+    result = newText(child.strVal)
+  of RunnableNodes:
+    result = newText(&"{{{repr(child)}}}")
+  else:
+    raise newException(ValueError, "unsupported child kind: " & $child.kind)
+
 func getAttrKey(key: NimNode): string =
   case key.kind:
   of nnkStrLit:
@@ -40,8 +58,9 @@ func addAttr(el: XmlNode, attr: NimNode) =
   assert not isNil(el.attrs), "attributes not initialized"
 
 func isHyperscriptCall(node: NimNode): bool =
-  node.kind == nnkCall and node[0].kind in {nnkIdent, nnkSym} and node[
-      0].strVal == "h"
+  node.kind == nnkCall and
+  node[0].kind in {nnkIdent, nnkSym} and
+  node[0].strVal == "h"
 
 func addHyperscriptChild(el: XmlNode, child: NimNode) =
   assert isHyperscriptCall(child), "expected hyperscript call"
@@ -51,13 +70,7 @@ func addChild(el: XmlNode, child: NimNode) =
   if isHyperscriptCall(child):
     el.addHyperscriptChild(child)
   else:
-    case child.kind:
-    of nnkStrLit:
-      el.add newText(child.strVal)
-    of RunnableNodes:
-      el.add newText(&"{{{repr(child)}}}")
-    else:
-      raise newException(ValueError, "unsupported child kind: " & $child.kind)
+    el.add getCommonChild(child)
 
 func addChildren(el: XmlNode, chilren: NimNode) =
   chilren.expectKind {nnkBracket, nnkPar}
@@ -69,7 +82,7 @@ func addAttrs(el: XmlNode, attrs: NimNode) =
   for attr in attrs:
     el.addAttr(attr)
 
-func addParam(el: XmlNode, param: NimNode) =
+func addGeneric(el: XmlNode, param: NimNode) =
   case param.kind:
   of nnkBracket, nnkPar:
     el.addChildren(param)
@@ -82,19 +95,10 @@ func addParam(el: XmlNode, param: NimNode) =
   else:
     raise newException(ValueError, "unsupported parameter kind: " & $param.kind)
 
-func tag(name: NimNode): XmlNode =
-  case name.kind:
-  of nnkStrLit:
-    result = newElement(name.strVal)
-  of RunnableNodes:
-    result = newElement(&"{{{repr(name)}}}")
-  else:
-    raise newException(ValueError, "unsupported tag kind: " & $name.kind)
-
 func hxml(xs: varargs[NimNode]): XmlNode =
-  result = tag(xs[0])
+  result = getTagElement(xs[0])
   for x in xs[1..^1]:
-    result.addParam(x)
+    result.addGeneric(x)
 
 macro h(xs: varargs[untyped]): untyped =
   let el = hxml(xs.toSeq)
